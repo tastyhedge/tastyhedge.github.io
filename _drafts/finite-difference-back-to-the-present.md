@@ -37,7 +37,7 @@ known as _calibration_ and is the inverse problem to pricing, which we'll focus 
 For example, below is a chain of option prices and already calibrated implied
 volatilities for AMD as of 2023-11-17 15:05:
 
-![AMD Option Chain on 2023-11-17 15:05](/assets/img/202311171505-AMD-retro.png)
+![AMD Option Chain on 2023-11-17 15:05](/assets/img/AMD-options.jpg)
 
 ## Pricing Equation
 
@@ -60,7 +60,7 @@ multi-asset derivatives as well. See ... for more details.
 In practice, it's more convenient to change variables to `x = \ln(s)` which leads to the following
 equation:
 
-![Pricing PDE](/assets/img/fd-black-scholes.jpg)
+![Pricing PDE](/assets/img/Black-Scholes.jpg)
 
 ## Numerical Solution
 
@@ -103,7 +103,7 @@ std::vector<f64> t;
 to approximate continuous derivatives in the original pricing equation. They are defined on the
 `(t,x)` grid as:
 
-![Discretization](/assets/img/fd-difference.png)
+![Discretization](/assets/img/Difference-Operators.jpg)
 
 **3) Finite-Difference Equation**, a discrete version of the Black-Scholes equation, is derived from
 the pricing equation by replacing continuous derivatives with difference operators defined in Step 2.
@@ -111,7 +111,7 @@ the pricing equation by replacing continuous derivatives with difference operato
 It's convenient to introduce the A operator, which contains difference operators over the x-axis
 only.
 
-![Pricing PDE](/assets/img/fd-difference-equation.png)
+![Pricing PDE](/assets/img/Difference-Equation.jpg)
 
 **4) Solution Scheme.** The above equation isn't completely defined yet, as we can expand
 **\delta_t** operator in several ways. (**\delta_x and \delta_xx** operators are generally chosen
@@ -133,26 +133,68 @@ by \theta parameter, so that
 - `\theta = 0` is Euler backward
 - `\theta = 1/2` is Crank-Nicolson scheme
 
-![Finite-Difference Schemes](/assets/img/fd-crank-nicolson.png)
+![Finite-Difference Schemes](/assets/img/Finite-Difference.jpg)
 
-**5) Backward Evolution**
+**5) Backward Evolution.** I guess at this point it's clear what our next step should be. All we
+need is to solve a _tridiagonal_ linear system in order to find `V(t_i)` from `V(t_i+1)` as is
+prescribed by the Crank-Nicolson method above. The _initial value_ is given by the option price at
+maturity `V(t=T)`, which is equal to the _payoff_ or _intrinsic value_ for a given strike `k`, in
+other words
 
-We don't know function V(t=0, s), obviously this is what we are looking for. Hence, forward
-evolution is no go, as we don't know the initial condition is unknown. However, we know the initial
-condition for the backward evolution, as V(t=T, s) is a payoff at expiry. It is (K-s)+ for CALL and
-(s-K)+ for PUT options.
+- `max(s-k, 0)` for calls,
+- `max(k-s, 0)` for puts.
 
-**Thomas Algorithm** is [link](https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm) ...
+[Thomas algorithm](https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm) is a simplified
+form of Gaussian elimination that is used to solve tridiagonal systems of linear equations. For
+such systems, the solution can be obtained in O(n) operations instead of O(n^3) required by
+Gaussian elimination, which makes this step relatively fast.
 
-**6) Early Exercise.** For American options we should taken into account the right to early
-exercise. If continue like that we will get a European option price. For the American exercise, we
-should ensure that option price is not less than its intrinsic value, otherwise we'll get an
-arbitrage situation when one can buy an option for the lower price than its exercise value.
+C++ implementation of the Thomas solver is compact and widely available, for example, see [Numerical
+Recipes](https://numerical.recipes/). I list it below for completeness:
 
-![Early Exercise Condition](/assets/img/fd-early-exercise.png)
+```cpp
+Error
+solveTridiagonal(
+    const int xDim,
+    const f64* al, const f64* a, const f64* au,    /// LHS
+    const f64* y,                                  /// RHS
+    f64* x)                                        /// Solution
+{
+    if (a[0] == 0)
+        return "solveTridiagonal: Error 1";
+    if (xDim <= 2)
+        return "solveTridiagonal: Error 2";
 
-In other words, American option's value is never less than its payoff, which is the _initial
-condition_ for the difference equation:
+    std::vector<f64> gam(xDim);
+
+    f64 bet;
+    x[0] = y[0] / (bet = a[0]);
+    for (auto j = 1; j < xDim; j++) {
+        gam[j] = au[j - 1] / bet;
+        bet = a[j] - al[j] * gam[j];
+
+        if (bet == 0)
+            return "solveTridiagonal: Error 3";
+
+        x[j] = (y[j] - al[j] * x[j - 1]) / bet;
+        if (x[j] < 0)
+            continue;
+    };
+
+    for (auto j = xDim - 2; j >= 0; --j) {
+        x[j] -= gam[j + 1] * x[j + 1];
+    }
+
+    return "";
+};
+
+```
+
+**6) Early Exercise.** For American options we should taken into account the right to exercise
+before maturity. As already mention, this particular feature make the Black-Scholes equation more
+complicated with no closed-form solution.
+
+I account for this at every backward evolution step like this:
 
 ```cpp
 for (auto xi = 0; xi < xDim; ++xi) {
@@ -160,28 +202,35 @@ for (auto xi = 0; xi < xDim; ++xi) {
 }
 ```
 
+![Early Exercise Condition](/assets/img/Early-Exercise.jpg)
+
 ## Boundary Conditions
 
-You probably noticed one inconsistency with difference operators that deserve extra attention.
-Namely, the x-axis difference is not well defined at the grid's boundaries.
+You probably noticed that our definition of the difference operators on the grid is incomplete.
+Namely, the x-axis difference is not well defined at boundaries of the grid.
 
-**At boundaries**, the x-axis difference operators are not well defined as values outside of the
-grid are missing. For example when calculating dV_0 according to the definition (xx), we need V[-1]
-value which is undefined.
+**At boundaries**, difference operators over the x-axis are not well defined as some values outside
+of the grid are missing. For example,
 
-**The solution** is to account for the asymptotic behavior of the price function `V(t,x)` at
+```
+V'(x_0) = (V(x_1) - V(x_-1)) / (x_1 - x_-1)
+```
+
+however `x_-1` and `V(x_-1)` are not defined.
+
+We overcome this by taking into account the asymptotic behavior of the price function `V(t,s)` at
 boundaries of `s`, when `s -> 0` and `s -> +oo`.
 
 We know that `delta` is constant at boundaries, either 0 or 1, depending on the parity (PUT or
-CALL). However, more universal relation is that `gamma` is zero at boundaries. This gives the
-following relation:
+CALL). However, more universal relation is that `gamma = 0` at boundaries. This gives the following
+relation:
 
 ## Finite-Difference Grid
 
-Finally, it's time to discuss how grid points are distributed of `x`- and `t`-axes. So far we just
-said that there are `N` and `M` points over the each axis, but said nothing about the limits and
+Finally, it's time to discuss how grid points are distributed over `x`- and `t`-axes. So far we just
+said that there are `N` and `M` points along each axis, but said nothing about the limits and
 distribution of those points. In other words, what are the values `x[0]` / `x[M-1]` and gaps `dt[i]
-= t[i+1] - t[i]` and `dx[i] = x[i+1] - x[i]`
+= t[i+1] - t[i]` and `dx[i] = x[i+1] - x[i]` ?
 
 **The t-Axis** is divided uniformly with a step dt = T / N between points. It doesn't seem to use
 some non-uniform step here, at least not something I observed in practice.
