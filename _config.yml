@@ -1,8 +1,8 @@
 author: "Oleksandr Gituliar"
-url: "https://tastycode.dev"
+url: "https://tastyhedge.com"
 baseurl: "/" # the subpath of your site, e.g. /blog
-title: "TastyCode"
-logo: "/assets/img/logo-xl.png"
+title: "TastyHedge"
+logo: "/assets/img/logo/logo-192x192.png"
 
 defaults:
   - scope:
