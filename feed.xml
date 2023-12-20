@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="https://tastyhedge.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://tastyhedge.com/" rel="alternate" type="text/html" /><updated>2023-12-20T14:31:50+01:00</updated><id>https://tastyhedge.com/feed.xml</id><title type="html">TastyHedge</title><author><name>Oleksandr Gituliar</name></author><entry><title type="html">Tasty GPU – Pricing Derivatives on a Budget</title><link href="https://tastyhedge.com/blog/tasty-gpu-pricing-derivatives-on-a-budget" rel="alternate" type="text/html" title="Tasty GPU – Pricing Derivatives on a Budget" /><published>2023-10-01T00:00:00+02:00</published><updated>2023-10-01T00:00:00+02:00</updated><id>https://tastyhedge.com/blog/tasty-gpu-pricing-derivatives-on-a-budget</id><content type="html" xml:base="https://tastyhedge.com/blog/tasty-gpu-pricing-derivatives-on-a-budget"><![CDATA[<p>After five years working as a quant, I can tell that the wast majority of derivative pricing in the
+financial industry is done on CPU. This is easily explained by two facts: (1) no GPU was available
+when banks started developing their pricing analytics in 90’s; and (2) banking is a conservative
+sector, slow to upgrade its technical stack.</p>
+
+<p><strong>American Options.</strong> In this post, I benchmark pricing of American Options on GPU. Since no
+analytical formula exist to price American options (similar to the Black-Scholes formula for
+European options), people in banks use numerical methods to solve this sort of problems. Such
+methods are computationally greedy and, in practice, require a lot of hardware to risk-manage
+trading books with thousands of positions.</p>
+
+<p><strong>Finite Difference.</strong> For the benchmark, I use my own implementations of the
+<a href="https://en.wikipedia.org/wiki/Finite_difference_method">finite-difference method</a> for CPU and GPU.
+When it comes to pricing derivatives, there are two methods, widely-adopted by the industry, that
+are capable to solve a wide range of pricing problems. The first one is the famous <strong>Monte-Carlo</strong>
+method. Another one is the <strong>Finite-Difference</strong> method, which we will focus on in this post today.</p>
+
+<p>Note, a <u>much faster method</u> to price American Options was recently developed by Andersen et
+al. (details below). This method has some constraints (like time-independent coefficients or
+log-normal underlying process) and is not a complete replacement for the finite-difference.</p>
+
+<p><strong>Source Code.</strong> The code is written in C++ / CUDA and is available on Github:
+<a href="https://github.com/gituliar/kwinto-cuda">https://github.com/gituliar/kwinto-cuda</a>. It’s compatible with Linux and Windows, but requires
+Nvidia GPU.</p>
+
+<p>The finite-difference algorithm itself is not very complicated, however deserves a <u>dedicated
+post</u> to be fully explained, as there are some nuances here and there. Hopefully, I’ll find some
+time to cover this topic later.</p>
+
+<p><strong>Main focus</strong> of the benchmarking is on the following:</p>
+
+<ul>
+  <li>How much <u>faster</u> is GPU vs CPU? <br /> Speed is a convenient metric to compare performance,
+as faster usually means better (given all other factors equal).</li>
+  <li>How much <u>cheaper</u> is GPU vs CPU? <br /> Budget is always important when making decisions.
+Speed matters because fast code means less CPU time, but there are other essential factors worth
+discussing that impact your budget.</li>
+</ul>
+
+<h2 id="benchmark">Benchmark</h2>
+
+<p>My approach is to price american options <u>in batches</u>. This is usually how things are run in
+banks, when risk-managing trading books. Every batch contains from 256 to 16’384 american options,
+which are priced in parallel utilizing <u>all cores</u> on CPU or GPU.</p>
+
+<p>The total pool of 378’000 options for the benchmark is constructed by permuting all combinations of
+the following parameters (with options cheaper than 0.5 rejected). <u>Reference prices</u> are
+calculated with <a href="https://github.com/gituliar/kwinto-cuda/blob/main/test/portfolio.py">portfolio.py</a>
+in QuantLib, using the
+<a href="https://hpcquantlib.wordpress.com/2022/10/09/high-performance-american-option-pricing/">Spanderen implementation</a>
+of a high-performance
+<a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2547027">Andersen-Lake-Offengenden algorithm</a>
+for pricing american options.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Range</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Parity</td>
+      <td>PUT</td>
+    </tr>
+    <tr>
+      <td>Strike</td>
+      <td>100</td>
+    </tr>
+    <tr>
+      <td>Spot</td>
+      <td>25, 50, 80, 90, 100, 110, 120, 150, 175, 200</td>
+    </tr>
+    <tr>
+      <td>Maturity</td>
+      <td>1/12, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0</td>
+    </tr>
+    <tr>
+      <td>Volatility</td>
+      <td>0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5</td>
+    </tr>
+    <tr>
+      <td>Interest rate</td>
+      <td>1%, 2%, 3%, 4%, 5%, 6%, 7%, 8%, 9%, 10%</td>
+    </tr>
+    <tr>
+      <td>Dividend rate</td>
+      <td>0%, 2%, 4%, 6%, 8%, 10%, 12%</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- For this project, American options are good candidates for several reasons:
+
+1.  No analytical formula exist to price American options (similar to the Black-Scholes-Merton
+    formula for European options), which doesn't make the code artificial / for-benchmark-only.
+2.  Since recently, a highly-accurate and fast method to price American options became available,
+    (see Andersen et al. \[1\]). We use its implementation from the QuantLib for a crosscheck.
+3.  Thirdly, the code can be extended to price exotic options for which no fast method exist. -->
+
+<!-- <figure>
+  <img src="/img/fd1d-gpu-z800.png"/>
+  <figcaption>This is my caption text.</figcaption>
+</figure> -->
+
+<p><strong>Results.</strong> A plot below depicts the main results. Each bin shows how many options are priced per
+second (higher is better):</p>
+
+<p><img src="/assets/img/2023-10-01/bench-512-cpu-gpu.png" alt="Benchmark CPU vs GPU" /></p>
+
+<p><strong>US Options Market.</strong> To get some idea about how these results are useful in practice, let’s have a
+look at a size of the US options market. The data from <a href="https://www.opraplan.com">OPRA</a> tells that
+there are:</p>
+
+<ul>
+  <li>5’800 stocks</li>
+  <li>680’000 options (with 5%-95% delta)</li>
+</ul>
+
+<p>In other words, as per the benchmark, it takes <strong>2 min</strong> to price an entire US Options Market on a
+$100 GPU. It should take 10x longer for calibration, which is a more challenging task.</p>
+
+<p>Few things to keep in mind for the results above:</p>
+
+<ol>
+  <li>
+    <p><strong>GPU is 2x faster</strong> in a <u>single-precision</u> mode (gray bin) vs double-precision (yellow
+bin). Meantime, CPU performs more or less the same in both modes (blue and orange bins).</p>
+
+    <p>This is a clear sign that the GPU is limited by <u>data throughput</u>. With its 1’920 cores, the
+GPU processes data faster than loads it from the GPU memory.</p>
+  </li>
+  <li>
+    <p><strong>GPU is 4 years older</strong>, which is a big gap for hardware. Nevertheless, the oldish GPU is still
+faster than the modern CPU.</p>
+
+    <ul>
+      <li><a href="https://www.techpowerup.com/gpu-specs/geforce-gtx-1070.c2840">Nvidia GTX 1070</a>, 16nm –
+released in 2016.</li>
+      <li><a href="https://www.techpowerup.com/cpu-specs/ryzen-9-5900x.c2363">AMD Ryzen 9 X5900</a>, 7nm – released
+in 2020.</li>
+    </ul>
+  </li>
+</ol>
+
+<!-- 3. **GPU loves big batches**, while CPU is most efficient for small jobs. -->
+
+<h2 id="budget">Budget</h2>
+
+<p>In the production environment, <u>faster</u> is almost always means <u>cheaper</u>. Speed is not the
+only factor that affects operational costs. Let’s take a look at other factors that appeal in favor
+of GPU:</p>
+
+<!-- **Cheap to setup.** In Apr'23, on a secondary market in Denmark I paid $250 for the AMD Ryzen 9
+X5900 and only $120 for Nvidia GTX 1070. Obviously, <u>CPU requires</u> a motherboard, RAM, HDD -- a
+whole machine -- so final price is 3x higher than that. <u>GPU requires</u> only a PCI-E slot. -->
+
+<p><strong>Cheap to scale.</strong> To run an <u>extra CPU</u> it requires a motherboard, RAM, HDD – a whole new
+machine, which quickly becomes expensive to scale.</p>
+
+<p>An <u>extra GPU</u>, however, requires only a PCI-E slot. Some motherboards offer a dozen PCI-E
+ports, like <a href="https://www.asrock.com/mb/Intel/Q270%20Pro%20BTC+/index.asp">ASRock Q270 Pro BTC+</a>,
+which is especially popular among crypto miners. Such a motherboard can handle <u>17 GPUs on a
+single machine</u>. In addition, there is no need to setup a network, manage software on various
+machines, and hire an army of devops to automate all that.</p>
+
+<p>This gives extra 3-5x cost reduction in favor of GPU.</p>
+
+<p><strong>Cheap to upgrade.</strong> PCI-E standard is backward compatible, so that new GPU cards are still run on
+<u>old machines</u>. Below is the same benchmark run on a much older machine with dual
+<a href="https://www.techpowerup.com/cpu-specs/xeon-x5675.c949">Xeon X5675</a> from 2011:</p>
+
+<p><img src="/assets/img/2023-10-01/bench-z800.png" alt="Benchmark CPU vs GPU" /></p>
+
+<p>What immediately catches the eye is that Ryzen 9 outperforms the dual-Xeon machine (both have equal
+number of physical cores, btw). This is not a surprise, given a 10-year technological gap.</p>
+
+<p>Surprising is that a newer <u>GPU performs equally well</u> on a much older machine. In practice,
+this means that at some point in the future when GPU cards deserve an upgrade there is no need to
+upgrade other components, like CPU, motherboard, etc.</p>
+
+<h2 id="summary">Summary</h2>
+
+<p>The <u>Finite-Difference method</u> is a universal and powerful method, heavily used in the
+financial industry. However, what is the benefit of running it on GPU ?</p>
+
+<p><strong>Final verdict.</strong> My benchmark shows that:</p>
+
+<ul>
+  <li>GPU is 2x faster</li>
+  <li>GPU is 3x-5x cheaper</li>
+</ul>
+
+<p>This combined gives <u>10x factor</u> in favor of GPU as a platform for pricing derivatives.</p>]]></content><author><name>Oleksandr Gituliar</name></author><summary type="html"><![CDATA[After five years working as a quant, I can tell that the wast majority of derivative pricing in the financial industry is done on CPU. This is easily explained by two facts: (1) no GPU was available when banks started developing their pricing analytics in 90’s; and (2) banking is a conservative sector, slow to upgrade its technical stack.]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://tastyhedge.com/assets/img/2023-10-01/bench-512-cpu-gpu.png" /><media:content medium="image" url="https://tastyhedge.com/assets/img/2023-10-01/bench-512-cpu-gpu.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">Tasty C++ – Memory Layout of std::string</title><link href="https://tastyhedge.com/blog/tasty-cpp-memory-layout-of-std-string" rel="alternate" type="text/html" title="Tasty C++ – Memory Layout of std::string" /><published>2023-08-07T00:00:00+02:00</published><updated>2023-08-07T00:00:00+02:00</updated><id>https://tastyhedge.com/blog/tasty-cpp-memory-layout-of-std-string</id><content type="html" xml:base="https://tastyhedge.com/blog/tasty-cpp-memory-layout-of-std-string"><![CDATA[<p>For a professional C++ developer, it’s important to understand memory organization of the data
+structures, especially when it comes to the containers from the C++ Standard Library. In this post
+of Tasty C++ series we’ll look inside of <code class="language-plaintext highlighter-rouge">std::string</code>, so that you can more effectively work with
+C++ strings and take advantage and avoid pitfalls of the C++ Standard Library you are using.</p>
+
+<p>In C++ Standard Library, <code class="language-plaintext highlighter-rouge">std::string</code> is one of the three
+<a href="https://en.cppreference.com/w/cpp/named_req/ContiguousContainer">contiguous containers</a> (together
+with <code class="language-plaintext highlighter-rouge">std::array</code> and <code class="language-plaintext highlighter-rouge">std::vector</code>). This means that a sequence of characters is stored in a
+<em>contiguous</em> area of the memory and an individual character can be efficiently accessed by its index
+at O(1) time. The C++ Standard imposes more requirements on the complexity of string operations,
+which we will briefly focus on later in this post.</p>
+
+<p>If we are talking about the C++ Standard, it’s important to remember that it doesn’t impose exact
+implementation of <code class="language-plaintext highlighter-rouge">std::string</code>, nor does it specify the exact size of <code class="language-plaintext highlighter-rouge">std::string</code>. In practice,
+as we’ll see, the most popular implementations of the C++ Standard Library allocate 24 or 32 bytes
+for the same <code class="language-plaintext highlighter-rouge">std::string</code> object (excluding the data buffer). On top of that, the memory layout of
+string objects is also different, which is a result of a tradeoff between optimal memory and CPU
+utilization, as we’ll also see below.</p>
+
+<h2 id="long-strings">Long Strings</h2>
+
+<p>For people just starting to work with strings in C++, <code class="language-plaintext highlighter-rouge">std::string</code> is usually associated with three
+data fields:</p>
+
+<ul>
+  <li><strong>Buffer</strong> – the buffer where string characters are stored, allocated on the heap.</li>
+  <li><strong>Size</strong> – the current number of characters in the string.</li>
+  <li><strong>Capacity</strong> – the max number of character the buffer can fit, a size of the buffer.</li>
+</ul>
+
+<p>Talking C++ language, this picture could be expressed as the following class:</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">TastyString</span> <span class="p">{</span>
+    <span class="kt">char</span> <span class="o">*</span>    <span class="n">m_buffer</span><span class="p">;</span>     <span class="c1">//  string characters</span>
+    <span class="kt">size_t</span>    <span class="n">m_size</span><span class="p">;</span>       <span class="c1">//  number of characters</span>
+    <span class="kt">size_t</span>    <span class="n">m_capacity</span><span class="p">;</span>   <span class="c1">//  m_buffer size</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This representation takes <em>24 bytes</em> and is very close to the production code.</p>
+
+<p>Let’s see how this compares to the <strong>actual size</strong> of <code class="language-plaintext highlighter-rouge">std::string</code>. This is given by
+<code class="language-plaintext highlighter-rouge">sizeof(std::string)</code> and in the most popular implementations of the C++ Standard Library is the
+following:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>C++ Standard Library</th>
+      <th>Size of std::string()</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="https://github.com/microsoft/STL">MSVC STL</a></td>
+      <td>32 bytes</td>
+    </tr>
+    <tr>
+      <td><a href="https://gcc.gnu.org/wiki/Libstdc++">GCC libstdc++</a></td>
+      <td>32 bytes</td>
+    </tr>
+    <tr>
+      <td><a href="https://libcxx.llvm.org/">LLVM libc++</a></td>
+      <td>24 bytes</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>What a surprise, only <strong>LLVM</strong> allocates expected <strong>24 bytes</strong> for <code class="language-plaintext highlighter-rouge">std::string</code>. The other two,
+<strong>MSVC</strong> and <strong>GCC</strong>, allocate <strong>32 bytes</strong> for the same string. (Numbers in the table are for -O3
+optimization. Note that MSVC allocates 40 bytes for <code class="language-plaintext highlighter-rouge">std::string</code> in the <em>debug mode</em>.)</p>
+
+<p>Let’s get some intuition about why various implementation allocate different amount of memory for
+the same object.</p>
+
+<!-- Is this information optimal to represent a string ?
+
+In fact, the _capacity_ is not required. We can use _size_ and _buffer_ only, but when the string
+grows, a new buffer should be allocated on the heap (because we can't tell how many extra characters
+the current buffer can fit). Since heap allocation is slow, such allocations are avoided by tracking
+the buffer capacity.
+
+The _buffer_ is a [null terminated string](https://en.wikipedia.org/wiki/Null-terminated_string)
+well known in C.
+
+`TastyString` occupies 24 bytes, which is only 3x more than **fundamental types** such as `void *`,
+`size_t`, or `double`. This means that `TastyString` is cheap to copy or pass by value as a function
+argument. What is not cheap, however, is (1) copying the buffer, especially when the string is long,
+and (2) allocating a buffer for a new, even small, copy of the string. -->
+
+<h2 id="small-strings">Small Strings</h2>
+
+<p>You have already noticed that the fields of <code class="language-plaintext highlighter-rouge">TastyString</code> and <code class="language-plaintext highlighter-rouge">std::string</code> contain only the
+<em>auxiliary data</em>, while the <em>actual data</em> (characters) is stored in the buffer allocated on the
+heap. However, when the actual data is small enough, it seems inefficient to reserve 24 or 32 bytes
+for the auxiliary data, isn’t it?</p>
+
+<p><strong>Small String Optimization.</strong> This is what the <em>small string optimization</em> (aka SSO) is used for.
+The idea is to store the actual data in the auxiliary region with no need to allocate the buffer on
+the heap, that makes <code class="language-plaintext highlighter-rouge">std::string</code> cheap to copy and construct (as it’s only 3x-4x times more than
+fundamental types such as <code class="language-plaintext highlighter-rouge">void *</code>, <code class="language-plaintext highlighter-rouge">size_t</code>, or <code class="language-plaintext highlighter-rouge">double</code>). This technique is popular among various
+implementations, but is not a part of the C++ Standard.</p>
+
+<p>Now it makes sense why some implementations increase the auxiliary region to 32 bytes — to store
+longer <em>small strings</em> in the auxiliary region before switching into the regular mode with
+dynamically allocated buffer.</p>
+
+<p><strong>How big are small strings?</strong> Let’s see how many characters the auxiliary region can store. This is
+what <code class="language-plaintext highlighter-rouge">std::string().capacity()</code> will tell us:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>C++ Standard Library</th>
+      <th>Small String Capacity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>MSVC STL</td>
+      <td>15 chars</td>
+    </tr>
+    <tr>
+      <td>GCC libstdc++</td>
+      <td>15 chars</td>
+    </tr>
+    <tr>
+      <td>LLVM libc++</td>
+      <td>22 chars</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Another surprise: LLVM with its 24 bytes for <code class="language-plaintext highlighter-rouge">std::string</code> fits more characters than MSVC or GCC
+with their 32 bytes. (In fact, it’s possible to fully utilize the auxiliary region, so that n-byte
+area fits n-1 chars and <code class="language-plaintext highlighter-rouge">'\0'</code>. Watch
+<a href="https://www.youtube.com/watch?v=kPR8h4-qZdk">CppCon 2016 talk</a> for details.)</p>
+
+<p><strong>How fast are small strings?</strong> As with many things in programming, there is a tradeoff between
+memory utilization and code complexity. In other words, the more characters we want to squeeze into
+the auxiliary memory, the more <em>complex logic</em> we should invent. This results not only in more
+assembly operations, but also into branching that is not good for CPU pipelines.</p>
+
+<p>To illustrate this point, let’s see what the most commonly used <code class="language-plaintext highlighter-rouge">size()</code> method compiles to in
+various standard libraries:</p>
+
+<p><strong>GCC stdlibc++</strong>. The function directly copies <code class="language-plaintext highlighter-rouge">m_size</code> field into the output register (see
+<a href="https://godbolt.org/z/7nYe9rWdE">https://godbolt.org/z/7nYe9rWdE</a>):</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Example</th>
+      <th>GCC libstdc++</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><img src="/assets/img/2023-08-07/string-size-src.png" alt="string size C++ code" /></td>
+      <td><img src="/assets/img/2023-08-07/string-size-gcc.png" alt="string size GCC assembler" /></td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>LLVM libc++</strong>. The function at first checks if the string is short and then calculates its size
+(see <a href="https://godbolt.org/z/xM349cG5P">https://godbolt.org/z/xM349cG5P</a>).</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Example</th>
+      <th>LLVM libc++</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><img src="/assets/img/2023-08-07/string-size-src.png" alt="string size C++ code" /></td>
+      <td><img src="/assets/img/2023-08-07/string-size-llvm.png" alt="string size LLVM assembler" /></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>LLVM code remains more complex for other methods too. It’s hard to say how badly this impacts the
+overall performance. The best advice is to keep this knowledge at hand and, for your particular use
+case, benchmark and experiment with various implementations.</p>
+
+<h2 id="memory-allocation-policy">Memory Allocation Policy</h2>
+
+<p>Finally, let’s come back to a long string mode and see how <code class="language-plaintext highlighter-rouge">m_buffer</code> grows when our string becomes
+bigger. Some
+<a href="https://github.com/gcc-mirror/gcc/blob/master/libstdc%2B%2B-v3/include/bits/basic_string.tcc#L142">comments</a>
+in the GCC source code, refer to the <em>exponential growth policy</em>. It’s not clear if this is an
+internal GCC decision or part of the C++ Standard. In any case, all three implementations use
+exponential growth, so that <strong>MSVC</strong> has <strong>1.5x factor</strong> growth, while <strong>GCC</strong> and <strong>LLVM</strong> use <strong>2x
+factor</strong>.</p>
+
+<p>The code below illustrates the growth algorithm in each implementation. The capacity examples show
+how the capacity changes as the string grows one character at a time in a loop:</p>
+
+<ul>
+  <li>
+    <p><strong>MSVC STL</strong></p>
+
+    <div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">size_t</span> <span class="nf">newCapacity</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">newSize</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">oldCap</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">max</span><span class="p">(</span><span class="n">newSize</span><span class="p">,</span> <span class="n">oldCap</span> <span class="o">+</span> <span class="n">oldCap</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>    </div>
+
+    <p>Capacity growth: 15, 31, 47, 70, 105, 157, 235, 352, 528, 792, 1’188, 1’782.</p>
+  </li>
+  <li>
+    <p><strong>GCC libstdc++</strong></p>
+
+    <div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">size_t</span> <span class="nf">newCapacity</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">newSize</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">oldCap</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">max</span><span class="p">(</span><span class="n">newSize</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">oldCap</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>    </div>
+
+    <p>Capacity growth: 15, 30, 60, 120, 240, 480, 960, 1’920, 3’840, 7’680, 15’360.</p>
+  </li>
+  <li>
+    <p><strong>LLVM libc++</strong></p>
+
+    <div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">size_t</span> <span class="nf">newCapacity</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">newSize</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">oldCap</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">max</span><span class="p">(</span><span class="n">newSize</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">oldCap</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>    </div>
+
+    <p>Capacity growth: 22, 47, 95, 191, 383, 767, 1’535, 3’071, 6’143, 12’287.</p>
+  </li>
+</ul>
+
+<h2 id="tha-last-word">Tha Last Word</h2>
+
+<p>The actual implementation of <code class="language-plaintext highlighter-rouge">std::string</code> varies among the most popular implementations of the C++
+Standard Library. The main difference is in the Small String Optimization, which the C++ Standard
+doesn’t define explicitly.</p>
+
+<p>The following table summarizes some key facts about <code class="language-plaintext highlighter-rouge">std::string</code>:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>C++ Standard Library</th>
+      <th>String Size</th>
+      <th>Small String Capacity</th>
+      <th>Growth Factor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>MSVC STL</td>
+      <td>32 bytes</td>
+      <td>15 chars</td>
+      <td>1.5x</td>
+    </tr>
+    <tr>
+      <td>GCC libstdc++</td>
+      <td>32 bytes</td>
+      <td>15 chars</td>
+      <td>2x</td>
+    </tr>
+    <tr>
+      <td>LLVM libc++</td>
+      <td>24 bytes</td>
+      <td>22 chars</td>
+      <td>2x</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>These details will be useful for every professional C++ developer. They are especially important
+when optimizing for CPU and memory efficiency.</p>
+
+<p>For sure, I’m not the only one curious about how strings are implemented in <strong>other languages</strong>.
+What is different from C++, what is similar? Please, share your knowledge in the comments, I’d love
+to hear from you.</p>
+
+<p>Thanks for reading TastyCode.</p>
+
+<p><strong>Recommended Links:</strong></p>
+
+<ul>
+  <li><a href="https://www.youtube.com/watch?v=kPR8h4-qZdk">The strange details of std::string at Facebook</a>,
+CppCon 2016 talk by Nicholas Ormrod.</li>
+  <li><a href="https://joellaity.com/2020/01/31/string.html">libc++’s implementation of std::string</a> by Joel
+Laity with the <a href="https://news.ycombinator.com/item?id=22198158">discussion on HN</a>.</li>
+</ul>
+
+<p>TastyCode by Oleksandr Gituliar.</p>]]></content><author><name>Oleksandr Gituliar</name></author><summary type="html"><![CDATA[About memory layout of std::string in the most popular c++ standard libraries: MSVC STL, GCC libstdc++, LLVM libc++.]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://tastyhedge.com/assets/img/2023-08-07/og-image.png" /><media:content medium="image" url="https://tastyhedge.com/assets/img/2023-08-07/og-image.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry></feed>

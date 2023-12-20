@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HZRVS8S0KQ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-HZRVS8S0KQ');
+  </script><link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/code.css">
+  <link rel="icon" href="/favicon.ico">
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Tasty C++ – Memory Layout of std::string | TastyHedge</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="Tasty C++ – Memory Layout of std::string" />
+<meta name="author" content="Oleksandr Gituliar" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="About memory layout of std::string in the most popular c++ standard libraries: MSVC STL, GCC libstdc++, LLVM libc++." />
+<meta property="og:description" content="About memory layout of std::string in the most popular c++ standard libraries: MSVC STL, GCC libstdc++, LLVM libc++." />
+<link rel="canonical" href="https://tastyhedge.com/blog/tasty-cpp-memory-layout-of-std-string" />
+<meta property="og:url" content="https://tastyhedge.com/blog/tasty-cpp-memory-layout-of-std-string" />
+<meta property="og:site_name" content="TastyHedge" />
+<meta property="og:image" content="https://tastyhedge.com/assets/img/2023-08-07/og-image.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-08-07T00:00:00+02:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="https://tastyhedge.com/assets/img/2023-08-07/og-image.png" />
+<meta property="twitter:title" content="Tasty C++ – Memory Layout of std::string" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Oleksandr Gituliar"},"dateModified":"2023-08-14T00:00:00+02:00","datePublished":"2023-08-07T00:00:00+02:00","description":"About memory layout of std::string in the most popular c++ standard libraries: MSVC STL, GCC libstdc++, LLVM libc++.","headline":"Tasty C++ – Memory Layout of std::string","image":"https://tastyhedge.com/assets/img/2023-08-07/og-image.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://tastyhedge.com/blog/tasty-cpp-memory-layout-of-std-string"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"https://tastyhedge.com/assets/img/logo-xl.png"},"name":"Oleksandr Gituliar"},"url":"https://tastyhedge.com/blog/tasty-cpp-memory-layout-of-std-string"}</script>
+<!-- End Jekyll SEO tag -->
+
+</head>
+
+<body>
+  <div class="content">
+    <nav class="flex justify-between pb-6 text-black">
+      <a class="block font-bold my-auto text-2xl tracking-tighter text-inherit" style="text-underline-offset: 6px;"
+        href="/">
+        <img src="/assets/img/logo.png" class="inline-flex py-4 me-2 w-8"><span class="align-middle">TastyCode</span>
+      </a>
+      <div class=" my-auto text-xl">
+        <a class="text-black" href="/about">About</a>
+      </div>
+    </nav>
+
+    <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Tasty C++ – Memory Layout of std::string</h1>
+    <p class="mb-0 post-subtitle flex justify-between">
+      <span><time class="dt-published" datetime="2023-08-07T00:00:00+02:00" itemprop="datePublished">
+          2023-08-14
+        </time>—
+        
+        <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <a href="/about" itemprop="name">Oleksandr Gituliar</a></span>
+      </span>
+      <span>
+        Follow on
+        <a href="https://www.linkedin.com/mynetwork/discovery-see-all/?usecase=PEOPLE_FOLLOWS&followMember=gituliar"
+          target="_blank" title="LinkedIn" class="social-media">
+          <img src="/assets/img/brands/linkedin.svg" />
+        </a>
+        <a href="https://github.com/gituliar" target="_blank" title="GitHub" class="social-media">
+          <img src="/assets/img/brands/github.svg" />
+        </a>
+        <!-- <a href="https://twitter.com/OGituliar" target="_blank" title="Twitter" class="social-media">
+          <img src="/assets/img/brands/twitter.svg" />
+        </a> -->
+      </span></p>
+  </header>
+
+  <div class="article-body" itemprop="articleBody">
+    <p>For a professional C++ developer, it’s important to understand memory organization of the data
+structures, especially when it comes to the containers from the C++ Standard Library. In this post
+of Tasty C++ series we’ll look inside of <code class="language-plaintext highlighter-rouge">std::string</code>, so that you can more effectively work with
+C++ strings and take advantage and avoid pitfalls of the C++ Standard Library you are using.</p>
+
+<p>In C++ Standard Library, <code class="language-plaintext highlighter-rouge">std::string</code> is one of the three
+<a href="https://en.cppreference.com/w/cpp/named_req/ContiguousContainer">contiguous containers</a> (together
+with <code class="language-plaintext highlighter-rouge">std::array</code> and <code class="language-plaintext highlighter-rouge">std::vector</code>). This means that a sequence of characters is stored in a
+<em>contiguous</em> area of the memory and an individual character can be efficiently accessed by its index
+at O(1) time. The C++ Standard imposes more requirements on the complexity of string operations,
+which we will briefly focus on later in this post.</p>
+
+<p>If we are talking about the C++ Standard, it’s important to remember that it doesn’t impose exact
+implementation of <code class="language-plaintext highlighter-rouge">std::string</code>, nor does it specify the exact size of <code class="language-plaintext highlighter-rouge">std::string</code>. In practice,
+as we’ll see, the most popular implementations of the C++ Standard Library allocate 24 or 32 bytes
+for the same <code class="language-plaintext highlighter-rouge">std::string</code> object (excluding the data buffer). On top of that, the memory layout of
+string objects is also different, which is a result of a tradeoff between optimal memory and CPU
+utilization, as we’ll also see below.</p>
+
+<h2 id="long-strings">Long Strings</h2>
+
+<p>For people just starting to work with strings in C++, <code class="language-plaintext highlighter-rouge">std::string</code> is usually associated with three
+data fields:</p>
+
+<ul>
+  <li><strong>Buffer</strong> – the buffer where string characters are stored, allocated on the heap.</li>
+  <li><strong>Size</strong> – the current number of characters in the string.</li>
+  <li><strong>Capacity</strong> – the max number of character the buffer can fit, a size of the buffer.</li>
+</ul>
+
+<p>Talking C++ language, this picture could be expressed as the following class:</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">TastyString</span> <span class="p">{</span>
+    <span class="kt">char</span> <span class="o">*</span>    <span class="n">m_buffer</span><span class="p">;</span>     <span class="c1">//  string characters</span>
+    <span class="kt">size_t</span>    <span class="n">m_size</span><span class="p">;</span>       <span class="c1">//  number of characters</span>
+    <span class="kt">size_t</span>    <span class="n">m_capacity</span><span class="p">;</span>   <span class="c1">//  m_buffer size</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This representation takes <em>24 bytes</em> and is very close to the production code.</p>
+
+<p>Let’s see how this compares to the <strong>actual size</strong> of <code class="language-plaintext highlighter-rouge">std::string</code>. This is given by
+<code class="language-plaintext highlighter-rouge">sizeof(std::string)</code> and in the most popular implementations of the C++ Standard Library is the
+following:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>C++ Standard Library</th>
+      <th>Size of std::string()</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="https://github.com/microsoft/STL">MSVC STL</a></td>
+      <td>32 bytes</td>
+    </tr>
+    <tr>
+      <td><a href="https://gcc.gnu.org/wiki/Libstdc++">GCC libstdc++</a></td>
+      <td>32 bytes</td>
+    </tr>
+    <tr>
+      <td><a href="https://libcxx.llvm.org/">LLVM libc++</a></td>
+      <td>24 bytes</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>What a surprise, only <strong>LLVM</strong> allocates expected <strong>24 bytes</strong> for <code class="language-plaintext highlighter-rouge">std::string</code>. The other two,
+<strong>MSVC</strong> and <strong>GCC</strong>, allocate <strong>32 bytes</strong> for the same string. (Numbers in the table are for -O3
+optimization. Note that MSVC allocates 40 bytes for <code class="language-plaintext highlighter-rouge">std::string</code> in the <em>debug mode</em>.)</p>
+
+<p>Let’s get some intuition about why various implementation allocate different amount of memory for
+the same object.</p>
+
+<!-- Is this information optimal to represent a string ?
+
+In fact, the _capacity_ is not required. We can use _size_ and _buffer_ only, but when the string
+grows, a new buffer should be allocated on the heap (because we can't tell how many extra characters
+the current buffer can fit). Since heap allocation is slow, such allocations are avoided by tracking
+the buffer capacity.
+
+The _buffer_ is a [null terminated string](https://en.wikipedia.org/wiki/Null-terminated_string)
+well known in C.
+
+`TastyString` occupies 24 bytes, which is only 3x more than **fundamental types** such as `void *`,
+`size_t`, or `double`. This means that `TastyString` is cheap to copy or pass by value as a function
+argument. What is not cheap, however, is (1) copying the buffer, especially when the string is long,
+and (2) allocating a buffer for a new, even small, copy of the string. -->
+
+<h2 id="small-strings">Small Strings</h2>
+
+<p>You have already noticed that the fields of <code class="language-plaintext highlighter-rouge">TastyString</code> and <code class="language-plaintext highlighter-rouge">std::string</code> contain only the
+<em>auxiliary data</em>, while the <em>actual data</em> (characters) is stored in the buffer allocated on the
+heap. However, when the actual data is small enough, it seems inefficient to reserve 24 or 32 bytes
+for the auxiliary data, isn’t it?</p>
+
+<p><strong>Small String Optimization.</strong> This is what the <em>small string optimization</em> (aka SSO) is used for.
+The idea is to store the actual data in the auxiliary region with no need to allocate the buffer on
+the heap, that makes <code class="language-plaintext highlighter-rouge">std::string</code> cheap to copy and construct (as it’s only 3x-4x times more than
+fundamental types such as <code class="language-plaintext highlighter-rouge">void *</code>, <code class="language-plaintext highlighter-rouge">size_t</code>, or <code class="language-plaintext highlighter-rouge">double</code>). This technique is popular among various
+implementations, but is not a part of the C++ Standard.</p>
+
+<p>Now it makes sense why some implementations increase the auxiliary region to 32 bytes — to store
+longer <em>small strings</em> in the auxiliary region before switching into the regular mode with
+dynamically allocated buffer.</p>
+
+<p><strong>How big are small strings?</strong> Let’s see how many characters the auxiliary region can store. This is
+what <code class="language-plaintext highlighter-rouge">std::string().capacity()</code> will tell us:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>C++ Standard Library</th>
+      <th>Small String Capacity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>MSVC STL</td>
+      <td>15 chars</td>
+    </tr>
+    <tr>
+      <td>GCC libstdc++</td>
+      <td>15 chars</td>
+    </tr>
+    <tr>
+      <td>LLVM libc++</td>
+      <td>22 chars</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Another surprise: LLVM with its 24 bytes for <code class="language-plaintext highlighter-rouge">std::string</code> fits more characters than MSVC or GCC
+with their 32 bytes. (In fact, it’s possible to fully utilize the auxiliary region, so that n-byte
+area fits n-1 chars and <code class="language-plaintext highlighter-rouge">'\0'</code>. Watch
+<a href="https://www.youtube.com/watch?v=kPR8h4-qZdk">CppCon 2016 talk</a> for details.)</p>
+
+<p><strong>How fast are small strings?</strong> As with many things in programming, there is a tradeoff between
+memory utilization and code complexity. In other words, the more characters we want to squeeze into
+the auxiliary memory, the more <em>complex logic</em> we should invent. This results not only in more
+assembly operations, but also into branching that is not good for CPU pipelines.</p>
+
+<p>To illustrate this point, let’s see what the most commonly used <code class="language-plaintext highlighter-rouge">size()</code> method compiles to in
+various standard libraries:</p>
+
+<p><strong>GCC stdlibc++</strong>. The function directly copies <code class="language-plaintext highlighter-rouge">m_size</code> field into the output register (see
+<a href="https://godbolt.org/z/7nYe9rWdE">https://godbolt.org/z/7nYe9rWdE</a>):</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Example</th>
+      <th>GCC libstdc++</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><img src="/assets/img/2023-08-07/string-size-src.png" alt="string size C++ code" /></td>
+      <td><img src="/assets/img/2023-08-07/string-size-gcc.png" alt="string size GCC assembler" /></td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>LLVM libc++</strong>. The function at first checks if the string is short and then calculates its size
+(see <a href="https://godbolt.org/z/xM349cG5P">https://godbolt.org/z/xM349cG5P</a>).</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Example</th>
+      <th>LLVM libc++</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><img src="/assets/img/2023-08-07/string-size-src.png" alt="string size C++ code" /></td>
+      <td><img src="/assets/img/2023-08-07/string-size-llvm.png" alt="string size LLVM assembler" /></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>LLVM code remains more complex for other methods too. It’s hard to say how badly this impacts the
+overall performance. The best advice is to keep this knowledge at hand and, for your particular use
+case, benchmark and experiment with various implementations.</p>
+
+<h2 id="memory-allocation-policy">Memory Allocation Policy</h2>
+
+<p>Finally, let’s come back to a long string mode and see how <code class="language-plaintext highlighter-rouge">m_buffer</code> grows when our string becomes
+bigger. Some
+<a href="https://github.com/gcc-mirror/gcc/blob/master/libstdc%2B%2B-v3/include/bits/basic_string.tcc#L142">comments</a>
+in the GCC source code, refer to the <em>exponential growth policy</em>. It’s not clear if this is an
+internal GCC decision or part of the C++ Standard. In any case, all three implementations use
+exponential growth, so that <strong>MSVC</strong> has <strong>1.5x factor</strong> growth, while <strong>GCC</strong> and <strong>LLVM</strong> use <strong>2x
+factor</strong>.</p>
+
+<p>The code below illustrates the growth algorithm in each implementation. The capacity examples show
+how the capacity changes as the string grows one character at a time in a loop:</p>
+
+<ul>
+  <li>
+    <p><strong>MSVC STL</strong></p>
+
+    <div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">size_t</span> <span class="nf">newCapacity</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">newSize</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">oldCap</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">max</span><span class="p">(</span><span class="n">newSize</span><span class="p">,</span> <span class="n">oldCap</span> <span class="o">+</span> <span class="n">oldCap</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>    </div>
+
+    <p>Capacity growth: 15, 31, 47, 70, 105, 157, 235, 352, 528, 792, 1’188, 1’782.</p>
+  </li>
+  <li>
+    <p><strong>GCC libstdc++</strong></p>
+
+    <div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">size_t</span> <span class="nf">newCapacity</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">newSize</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">oldCap</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">max</span><span class="p">(</span><span class="n">newSize</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">oldCap</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>    </div>
+
+    <p>Capacity growth: 15, 30, 60, 120, 240, 480, 960, 1’920, 3’840, 7’680, 15’360.</p>
+  </li>
+  <li>
+    <p><strong>LLVM libc++</strong></p>
+
+    <div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">size_t</span> <span class="nf">newCapacity</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">newSize</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">oldCap</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">max</span><span class="p">(</span><span class="n">newSize</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">oldCap</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>    </div>
+
+    <p>Capacity growth: 22, 47, 95, 191, 383, 767, 1’535, 3’071, 6’143, 12’287.</p>
+  </li>
+</ul>
+
+<h2 id="tha-last-word">Tha Last Word</h2>
+
+<p>The actual implementation of <code class="language-plaintext highlighter-rouge">std::string</code> varies among the most popular implementations of the C++
+Standard Library. The main difference is in the Small String Optimization, which the C++ Standard
+doesn’t define explicitly.</p>
+
+<p>The following table summarizes some key facts about <code class="language-plaintext highlighter-rouge">std::string</code>:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>C++ Standard Library</th>
+      <th>String Size</th>
+      <th>Small String Capacity</th>
+      <th>Growth Factor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>MSVC STL</td>
+      <td>32 bytes</td>
+      <td>15 chars</td>
+      <td>1.5x</td>
+    </tr>
+    <tr>
+      <td>GCC libstdc++</td>
+      <td>32 bytes</td>
+      <td>15 chars</td>
+      <td>2x</td>
+    </tr>
+    <tr>
+      <td>LLVM libc++</td>
+      <td>24 bytes</td>
+      <td>22 chars</td>
+      <td>2x</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>These details will be useful for every professional C++ developer. They are especially important
+when optimizing for CPU and memory efficiency.</p>
+
+<p>For sure, I’m not the only one curious about how strings are implemented in <strong>other languages</strong>.
+What is different from C++, what is similar? Please, share your knowledge in the comments, I’d love
+to hear from you.</p>
+
+<p>Thanks for reading TastyCode.</p>
+
+<p><strong>Recommended Links:</strong></p>
+
+<ul>
+  <li><a href="https://www.youtube.com/watch?v=kPR8h4-qZdk">The strange details of std::string at Facebook</a>,
+CppCon 2016 talk by Nicholas Ormrod.</li>
+  <li><a href="https://joellaity.com/2020/01/31/string.html">libc++’s implementation of std::string</a> by Joel
+Laity with the <a href="https://news.ycombinator.com/item?id=22198158">discussion on HN</a>.</li>
+</ul>
+
+<p>TastyCode by Oleksandr Gituliar.</p>
+
+  </div><script src="https://giscus.app/client.js" data-repo="tastycode-dev/tastycode-dev.github.io"
+    data-repo-id="R_kgDOKGBktA" data-category="Announcements" data-category-id="DIC_kwDOKGBktM4CYmy8"
+    data-mapping="title" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top"
+    data-theme="light" data-lang="en" crossorigin="anonymous" async>
+    </script></article>
+  </div>
+</body>
+
+</html>
