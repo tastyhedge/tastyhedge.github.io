@@ -2,7 +2,7 @@
 layout: post
 author: Oleksandr Gituliar
 date: 2023-08-07
-title: "Tasty C++ – Memory Layout of std::string"
+title: "Memory Layout of std::string"
 description:
   "About memory layout of std::string in the most popular c++ standard libraries: MSVC STL, GCC
   libstdc++, LLVM libc++."

@@ -1,7 +1,7 @@
 ---
 layout: post
 author: Oleksandr Gituliar
-title: "Tasty GPU – Pricing Derivatives on a Budget"
+title: "Pricing Derivatives on a Budget"
 image: /assets/img/2023-10-01/bench-512-cpu-gpu.png
 ---
 
