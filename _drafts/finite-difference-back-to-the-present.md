@@ -1,21 +1,21 @@
 ---
 layout: post
 author: Oleksandr Gituliar
-title: "Finite-Difference"
+title: "Pricing Americans with Finite-Difference"
 ---
 
-<!-- - Option Chain for AAPL / AMD / TSLA -->
-
-In [my previous post]() I discussed performance of the finite-difference algorithm for pricing
-American options on CPU vs GPU. Since then, people have asked to elaborate on the pricing algorithm
-itself. Hence, this post is dedicated to the [Finite-Difference
+In my previous post [Pricing Derivatives on a Budget](/blog/pricing-derivatives-on-a-budget) I
+discussed performance of the finite-difference algorithm for pricing American options on CPU vs GPU.
+Since then, people have asked to elaborate on the pricing algorithm itself. Hence, this post is
+dedicated to the [Finite-Difference
 Method](https://en.wikipedia.org/wiki/Finite_difference_methods_for_option_pricing).
 
 **C++ is a great language** to implement a finite-difference pricer on CPU and GPU. You'll find full
-source code from the previous post in [gituliar/kwinto-cuda]() on GitHub. Here, I'll discuss some of
-its key parts.
+source code from the previous post on GitHub in
+[gituliar/kwinto-cuda](https://github.com/gituliar/kwinto-cuda) repo. Here, I'll discuss some of its
+key parts.
 
-For C++ development, I recommend my favorite setup: Visual Studio for Windows + CMake + vcpkg.
+For C++ development, I recommend my standard setup: Visual Studio for Windows + CMake + vcpkg.
 Occasionally, I also compile on Ubuntu Linux with GCC and Clang, which is possible since I use CMake
 in my projects.
 
@@ -26,9 +26,6 @@ in practice various _numerical methods_ are used.
 To continue, you don't need deep knowledge of the finite-difference method. This material should be
 accessible for people with basic understanding of C++ and numerical methods at the undergraduate level.
 
-<!-- You don't need to have hands-on experience with a finite-difference method. All necessary details
-will appear as we go. It's neither scarry nor difficult, believe me. -->
-
 **Calibration.** For now we solve a pricing problem only, that is to find an option price given
 _implied volatility_ and option parameters, like strike, expiry, etc. In practice, the implied
 volatility is unknown and should be determined given the option price from the exchange. This is
@@ -37,38 +34,45 @@ known as _calibration_ and is the inverse problem to pricing, which we'll focus 
 For example, below is a chain of option prices and already calibrated implied
 volatilities for AMD as of 2023-11-17 15:05:
 
-![AMD Option Chain on 2023-11-17 15:05](/assets/img/AMD-options.jpg)
+![AMD Option Chain](/assets/img/finite-difference-americans/amd-options.jpg)
 
 ## Pricing Equation
 
 **American option's price** is defined as a solution of the [Black-Scholes
 equation](https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_equation). In fact, it's the same
-equation that results into a famous [Black-Scholes formula]() for European option. However, for
-American option we should impose an extra condition to account for the _early exercise_, which we
-discuss down below. It's this early-exercise condition that makes the original equation so difficult
-that we have no option, but to solve it numerically.
+equation that results into a famous [Black-Scholes
+formula](https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model#Black%E2%80%93Scholes_formula)
+for European option. However, for American option we should impose an extra condition to account for
+the _early exercise_, which we discuss down below. It's this early-exercise condition that makes the
+original equation so difficult that we have no option, but to solve it numerically.
 
-**The Black-Scholes equation** is that just a particular example of the pricing differential
-equation. In general, we can define similar differential equations for various types and flavours of
-options and other derivatives, which can be treated with the same method. This versatility is what
-makes the finite-difference so popular among quants and widely used in financial institutions.
+**The Black-Scholes equation** is just a particular example of the pricing differential equation. In
+general, we can define similar differential equations for various types and flavours of options and
+other derivatives, which can be treated with the same method. This versatility is what makes the
+finite-difference so popular among quants and widely used in financial institutions.
 
-**The pricing equation** is usually derived using [Delta Hedging]() argument, which is an intuitive
-and powerful approach to derive pricing equations, not only for vanilla options, but for exotic
-multi-asset derivatives as well. See ... for more details.
+**The pricing equation** is usually derived using [Delta
+Hedging](https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_equation#Derivation_of_the_Black%E2%80%93Scholes_PDE)
+argument, which is an intuitive and powerful approach to derive pricing equations, not only for
+vanilla options, but for exotic multi-asset derivatives as well.
 
-In practice, it's more convenient to change variables to `x = \ln(s)` which leads to the following
+In practice, it's more convenient to change variables to `x = ln(s)` which leads to the following
 equation:
 
-![Pricing PDE](/assets/img/Black-Scholes.jpg)
+![Black Scholes PDE](/assets/img/finite-difference-americans/black-scholes.jpg)
 
 ## Numerical Solution
 
-**The Black-Scholes** equation belongs to the family of [diffusion equations](), which in general
-case have no closed-form solution. Fortunately it's one of the easiest differential equations to
-solve numerically, which apart from the
+**The Black-Scholes** equation belongs to the family of [diffusion
+equations](https://en.wikipedia.org/wiki/Diffusion_equation), which in general case have no
+closed-form solution. Fortunately it's one of the easiest differential equations to solve
+numerically, which apart from the
 [Finite-Difference](https://en.wikipedia.org/wiki/Finite_difference_method), are usually treated
-with [Monte-Carlo]() or [Fourier transformation]() methods.
+with
+[Monte-Carlo](https://en.wikipedia.org/wiki/Monte_Carlo_methods_in_finance#Sample_paths_for_standard_models)
+or [Fourier
+transformation](https://en.wikipedia.org/wiki/Fourier_transform#Analysis_of_differential_equations)
+methods.
 
 **The Solution.** Let's be more specific about the solution we are looking for. Our goal is to find
 the option price _function_ `V(t,s)` at a fixed time `t=0` (today) for arbitrary spot price `s`.
@@ -89,21 +93,18 @@ which take
 This naturally leads to the following C++ definitions:
 
 ```cpp
-#define N 512
-#define M 1024
+u32 xDim = 512;
+u32 tDim = 1024;
 
-auto xDim = 512;
-auto tDim = 512;
-
-std::vector<f64> x;
-std::vector<f64> t;
+std::vector<f64> x(xDim);
+std::vector<f64> t(tDim);
 ```
 
 **2) [Difference Operators](https://en.wikipedia.org/wiki/Finite_difference#Basic_types)** are used
 to approximate continuous derivatives in the original pricing equation. They are defined on the
 `(t,x)` grid as:
 
-![Discretization](/assets/img/Difference-Operators.jpg)
+![Difference Operators](/assets/img/finite-difference-americans/difference-operators.jpg)
 
 **3) Finite-Difference Equation**, a discrete version of the Black-Scholes equation, is derived from
 the pricing equation by replacing continuous derivatives with difference operators defined in Step 2.
@@ -111,15 +112,16 @@ the pricing equation by replacing continuous derivatives with difference operato
 It's convenient to introduce the A operator, which contains difference operators over the x-axis
 only.
 
-![Pricing PDE](/assets/img/Difference-Equation.jpg)
+![Difference Equation](/assets/img/finite-difference-americans/difference-equation.jpg)
 
 **4) Solution Scheme.** The above equation isn't completely defined yet, as we can expand
 **\delta_t** operator in several ways. (**\delta_x and \delta_xx** operators are generally chosen
 according to the central difference definition.)
 
-**\delta_t** operator might be chosen as _Forward_ or _Backward_ difference, which lead to the
-[explicit scheme](https://en.wikipedia.org/wiki/Finite_difference_method#Explicit_method) solution.
-In this case, the numerical error is O(dt) + O(dx^2), which is not the best we can achieve.
+**\delta_t** operator might be chosen as [_Forward_ or
+_Backward_ difference](https://en.wikipedia.org/wiki/Euler_method), which lead to the [explicit
+scheme](https://en.wikipedia.org/wiki/Finite_difference_method#Explicit_method) solution. In this
+case, the numerical error is O(dt) + O(dx^2), which is not the best we can achieve.
 
 **[Crank-Nicolson](https://en.wikipedia.org/wiki/Finite_difference_method#Crank%E2%80%93Nicolson_method)
 scheme**, an implicit scheme, is a better alternative to the explicit scheme. It's slightly more
@@ -133,7 +135,7 @@ by \theta parameter, so that
 - `\theta = 0` is Euler backward
 - `\theta = 1/2` is Crank-Nicolson scheme
 
-![Finite-Difference Schemes](/assets/img/Finite-Difference.jpg)
+![Finite-Difference Schemes](/assets/img/finite-difference-americans/finite-difference.jpg)
 
 **5) Backward Evolution.** I guess at this point it's clear what our next step should be. All we
 need is to solve a _tridiagonal_ linear system in order to find `V(t_i)` from `V(t_i+1)` as is
@@ -202,7 +204,7 @@ for (auto xi = 0; xi < xDim; ++xi) {
 }
 ```
 
-![Early Exercise Condition](/assets/img/Early-Exercise.jpg)
+![Early Exercise](/assets/img/finite-difference-americans/early-exercise.jpg)
 
 ## Boundary Conditions
 
@@ -225,6 +227,8 @@ We know that `delta` is constant at boundaries, either 0 or 1, depending on the 
 CALL). However, more universal relation is that `gamma = 0` at boundaries. This gives the following
 relation:
 
+![Boundary Conditions](/assets/img/finite-difference-americans/boundary-conditions.jpg)
+
 ## Finite-Difference Grid
 
 Finally, it's time to discuss how grid points are distributed over `x`- and `t`-axes. So far we just
@@ -237,7 +241,7 @@ some non-uniform step here, at least not something I observed in practice.
 
 **The x-Axis** is divided in a more tricky way. ...
 
-![Asinh Plot](/assets/img/fd-asinh.png)
+![Placing Grid Points](/assets/img/finite-difference-americans/place-grid-points.jpg)
 
 ```cpp
 /// Init X-Grid
@@ -265,6 +269,16 @@ for (auto j = 0; j < xDim; j++) {
 
 ## Conclusion
 
-Finite-Difference is a powerful numerical method, widely used by the quantitative finance
-practitioners. It can treat problems with exotic derivatives with non-constant coefficients and is
-easy to program, as we saw in this post.
+In this post I elaborated on some key parts of my C++ implementation of the finite-difference pricer
+for American options, which is available in
+[gituliar/kwinto-cuda](https://github.com/gituliar/kwinto-cuda) repo on GitHub. The method itself
+can be applied to a wide range of problems in finance which makes it so popular among quants.
+
+Also, take a look at my previous post [Pricing Derivatives on a
+Budget](/blog/pricing-derivatives-on-a-budget), where I discussed performance of this finite-difference
+algorithm for pricing American options on CPU vs GPU.
+
+## References
+
+- [Lectures on Finite-Difference Methods](https://github.com/brnohu/CompFin) by Andreasen and Huge
+- [Numerical Recipes in C++](https://numerical.recipes/book.html)
