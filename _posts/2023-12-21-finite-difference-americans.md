@@ -2,6 +2,10 @@
 layout: post
 author: Oleksandr Gituliar
 title: "Pricing Americans with Finite-Difference"
+description: "We discuss pricing of American options with Finite-Difference method in C++."
+image: /assets/img/finite-difference-americans/og-image.png
+seo:
+  date_modified: 2023-12-21
 ---
 
 In my previous post [Pricing Derivatives on a Budget](/blog/pricing-derivatives-on-a-budget) I
