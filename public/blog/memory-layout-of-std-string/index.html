@@ -1,0 +1,242 @@
+<html>
+
+<body>
+    <h1>baseof.html</h1>
+    <hr />
+    
+
+<h2>blog/blog.html</h2>
+
+<p>For a professional C++ developer, it&rsquo;s important to understand memory organization of the data
+structures, especially when it comes to the containers from the C++ Standard Library. In this post
+of Tasty C++ series we&rsquo;ll look inside of <code>std::string</code>, so that you can more effectively work with
+C++ strings and take advantage and avoid pitfalls of the C++ Standard Library you are using.</p>
+<p>In C++ Standard Library, <code>std::string</code> is one of the three
+<a href="https://en.cppreference.com/w/cpp/named_req/ContiguousContainer">contiguous containers</a> (together
+with <code>std::array</code> and <code>std::vector</code>). This means that a sequence of characters is stored in a
+<em>contiguous</em> area of the memory and an individual character can be efficiently accessed by its index
+at O(1) time. The C++ Standard imposes more requirements on the complexity of string operations,
+which we will briefly focus on later in this post.</p>
+<p>If we are talking about the C++ Standard, it&rsquo;s important to remember that it doesn&rsquo;t impose exact
+implementation of <code>std::string</code>, nor does it specify the exact size of <code>std::string</code>. In practice,
+as we&rsquo;ll see, the most popular implementations of the C++ Standard Library allocate 24 or 32 bytes
+for the same <code>std::string</code> object (excluding the data buffer). On top of that, the memory layout of
+string objects is also different, which is a result of a tradeoff between optimal memory and CPU
+utilization, as we&rsquo;ll also see below.</p>
+<h2 id="long-strings">Long Strings</h2>
+<p>For people just starting to work with strings in C++, <code>std::string</code> is usually associated with three
+data fields:</p>
+<ul>
+<li><strong>Buffer</strong> – the buffer where string characters are stored, allocated on the heap.</li>
+<li><strong>Size</strong> – the current number of characters in the string.</li>
+<li><strong>Capacity</strong> – the max number of character the buffer can fit, a size of the buffer.</li>
+</ul>
+<p>Talking C++ language, this picture could be expressed as the following class:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">TastyString</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>    m_buffer;     <span style="color:#75715e">//  string characters
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    size_t    m_size;       <span style="color:#75715e">//  number of characters
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    size_t    m_capacity;   <span style="color:#75715e">//  m_buffer size
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+</span></span></code></pre></div><p>This representation takes <em>24 bytes</em> and is very close to the production code.</p>
+<p>Let&rsquo;s see how this compares to the <strong>actual size</strong> of <code>std::string</code>. This is given by
+<code>sizeof(std::string)</code> and in the most popular implementations of the C++ Standard Library is the
+following:</p>
+<table>
+<thead>
+<tr>
+<th>C++ Standard Library</th>
+<th>Size of std::string()</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/microsoft/STL">MSVC STL</a></td>
+<td>32 bytes</td>
+</tr>
+<tr>
+<td><a href="https://gcc.gnu.org/wiki/Libstdc++">GCC libstdc++</a></td>
+<td>32 bytes</td>
+</tr>
+<tr>
+<td><a href="https://libcxx.llvm.org/">LLVM libc++</a></td>
+<td>24 bytes</td>
+</tr>
+</tbody>
+</table>
+<p>What a surprise, only <strong>LLVM</strong> allocates expected <strong>24 bytes</strong> for <code>std::string</code>. The other two,
+<strong>MSVC</strong> and <strong>GCC</strong>, allocate <strong>32 bytes</strong> for the same string. (Numbers in the table are for -O3
+optimization. Note that MSVC allocates 40 bytes for <code>std::string</code> in the <em>debug mode</em>.)</p>
+<p>Let&rsquo;s get some intuition about why various implementation allocate different amount of memory for
+the same object.</p>
+<!-- raw HTML omitted -->
+<!-- raw HTML omitted -->
+<h2 id="small-strings">Small Strings</h2>
+<p>You have already noticed that the fields of <code>TastyString</code> and <code>std::string</code> contain only the
+<em>auxiliary data</em>, while the <em>actual data</em> (characters) is stored in the buffer allocated on the
+heap. However, when the actual data is small enough, it seems inefficient to reserve 24 or 32 bytes
+for the auxiliary data, isn&rsquo;t it?</p>
+<p><strong>Small String Optimization.</strong> This is what the <em>small string optimization</em> (aka SSO) is used for.
+The idea is to store the actual data in the auxiliary region with no need to allocate the buffer on
+the heap, that makes <code>std::string</code> cheap to copy and construct (as it&rsquo;s only 3x-4x times more than
+fundamental types such as <code>void *</code>, <code>size_t</code>, or <code>double</code>). This technique is popular among various
+implementations, but is not a part of the C++ Standard.</p>
+<p>Now it makes sense why some implementations increase the auxiliary region to 32 bytes &mdash; to store
+longer <em>small strings</em> in the auxiliary region before switching into the regular mode with
+dynamically allocated buffer.</p>
+<p><strong>How big are small strings?</strong> Let&rsquo;s see how many characters the auxiliary region can store. This is
+what <code>std::string().capacity()</code> will tell us:</p>
+<table>
+<thead>
+<tr>
+<th>C++ Standard Library</th>
+<th>Small String Capacity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MSVC STL</td>
+<td>15 chars</td>
+</tr>
+<tr>
+<td>GCC libstdc++</td>
+<td>15 chars</td>
+</tr>
+<tr>
+<td>LLVM libc++</td>
+<td>22 chars</td>
+</tr>
+</tbody>
+</table>
+<p>Another surprise: LLVM with its 24 bytes for <code>std::string</code> fits more characters than MSVC or GCC
+with their 32 bytes. (In fact, it&rsquo;s possible to fully utilize the auxiliary region, so that n-byte
+area fits n-1 chars and <code>'\0'</code>. Watch
+<a href="https://www.youtube.com/watch?v=kPR8h4-qZdk">CppCon 2016 talk</a> for details.)</p>
+<p><strong>How fast are small strings?</strong> As with many things in programming, there is a tradeoff between
+memory utilization and code complexity. In other words, the more characters we want to squeeze into
+the auxiliary memory, the more <em>complex logic</em> we should invent. This results not only in more
+assembly operations, but also into branching that is not good for CPU pipelines.</p>
+<p>To illustrate this point, let&rsquo;s see what the most commonly used <code>size()</code> method compiles to in
+various standard libraries:</p>
+<p><strong>GCC stdlibc++</strong>. The function directly copies <code>m_size</code> field into the output register (see
+<a href="https://godbolt.org/z/7nYe9rWdE">https://godbolt.org/z/7nYe9rWdE</a>):</p>
+<table>
+<thead>
+<tr>
+<th>Example</th>
+<th>GCC libstdc++</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="/assets/img/2023-08-07/string-size-src.png" alt="string size C++ code"></td>
+<td><img src="/assets/img/2023-08-07/string-size-gcc.png" alt="string size GCC assembler"></td>
+</tr>
+</tbody>
+</table>
+<p><strong>LLVM libc++</strong>. The function at first checks if the string is short and then calculates its size
+(see <a href="https://godbolt.org/z/xM349cG5P">https://godbolt.org/z/xM349cG5P</a>).</p>
+<table>
+<thead>
+<tr>
+<th>Example</th>
+<th>LLVM libc++</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="/assets/img/2023-08-07/string-size-src.png" alt="string size C++ code"></td>
+<td><img src="/assets/img/2023-08-07/string-size-llvm.png" alt="string size LLVM assembler"></td>
+</tr>
+</tbody>
+</table>
+<p>LLVM code remains more complex for other methods too. It&rsquo;s hard to say how badly this impacts the
+overall performance. The best advice is to keep this knowledge at hand and, for your particular use
+case, benchmark and experiment with various implementations.</p>
+<h2 id="memory-allocation-policy">Memory Allocation Policy</h2>
+<p>Finally, let&rsquo;s come back to a long string mode and see how <code>m_buffer</code> grows when our string becomes
+bigger. Some
+<a href="https://github.com/gcc-mirror/gcc/blob/master/libstdc%2B%2B-v3/include/bits/basic_string.tcc#L142">comments</a>
+in the GCC source code, refer to the <em>exponential growth policy</em>. It&rsquo;s not clear if this is an
+internal GCC decision or part of the C++ Standard. In any case, all three implementations use
+exponential growth, so that <strong>MSVC</strong> has <strong>1.5x factor</strong> growth, while <strong>GCC</strong> and <strong>LLVM</strong> use <strong>2x
+factor</strong>.</p>
+<p>The code below illustrates the growth algorithm in each implementation. The capacity examples show
+how the capacity changes as the string grows one character at a time in a loop:</p>
+<ul>
+<li>
+<p><strong>MSVC STL</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>size_t <span style="color:#a6e22e">newCapacity</span>(size_t newSize, size_t oldCap) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> max(newSize, oldCap <span style="color:#f92672">+</span> oldCap <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Capacity growth: 15, 31, 47, 70, 105, 157, 235, 352, 528, 792, 1'188, 1'782.</p>
+</li>
+<li>
+<p><strong>GCC libstdc++</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>size_t <span style="color:#a6e22e">newCapacity</span>(size_t newSize, size_t oldCap) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> max(newSize <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> oldCap);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Capacity growth: 15, 30, 60, 120, 240, 480, 960, 1'920, 3'840, 7'680, 15'360.</p>
+</li>
+<li>
+<p><strong>LLVM libc++</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>size_t <span style="color:#a6e22e">newCapacity</span>(size_t newSize, size_t oldCap) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> max(newSize, <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> oldCap) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Capacity growth: 22, 47, 95, 191, 383, 767, 1'535, 3'071, 6'143, 12'287.</p>
+</li>
+</ul>
+<h2 id="tha-last-word">Tha Last Word</h2>
+<p>The actual implementation of <code>std::string</code> varies among the most popular implementations of the C++
+Standard Library. The main difference is in the Small String Optimization, which the C++ Standard
+doesn&rsquo;t define explicitly.</p>
+<p>The following table summarizes some key facts about <code>std::string</code>:</p>
+<table>
+<thead>
+<tr>
+<th>C++ Standard Library</th>
+<th>String Size</th>
+<th>Small String Capacity</th>
+<th>Growth Factor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MSVC STL</td>
+<td>32 bytes</td>
+<td>15 chars</td>
+<td>1.5x</td>
+</tr>
+<tr>
+<td>GCC libstdc++</td>
+<td>32 bytes</td>
+<td>15 chars</td>
+<td>2x</td>
+</tr>
+<tr>
+<td>LLVM libc++</td>
+<td>24 bytes</td>
+<td>22 chars</td>
+<td>2x</td>
+</tr>
+</tbody>
+</table>
+<p>These details will be useful for every professional C++ developer. They are especially important
+when optimizing for CPU and memory efficiency.</p>
+<p>For sure, I&rsquo;m not the only one curious about how strings are implemented in <strong>other languages</strong>.
+What is different from C++, what is similar? Please, share your knowledge in the comments, I&rsquo;d love
+to hear from you.</p>
+<p>Thanks for reading TastyCode.</p>
+<p><strong>Recommended Links:</strong></p>
+<ul>
+<li><a href="https://www.youtube.com/watch?v=kPR8h4-qZdk">The strange details of std::string at Facebook</a>,
+CppCon 2016 talk by Nicholas Ormrod.</li>
+<li><a href="https://joellaity.com/2020/01/31/string.html">libc++&rsquo;s implementation of std::string</a> by Joel
+Laity with the <a href="https://news.ycombinator.com/item?id=22198158">discussion on HN</a>.</li>
+</ul>
+<p>TastyCode by Oleksandr Gituliar.</p>
+
+
+
+</body>
+
+</html>

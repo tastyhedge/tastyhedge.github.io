@@ -1,0 +1,22 @@
+{{ define "content" }}
+
+<h2>home.html</h2>
+
+<a href="/blog">Blog</a>
+<a href="/about">About</a>
+
+{{ $pages := where .Site.AllPages "Section" "blog" }}
+
+<ul class="list-inside list-none">
+    {{ range $page := $pages }}
+    <h2><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></h2>
+    {{ end }}
+</ul>
+
+<hr />
+
+<h3>home.html - Content</h3>
+
+{{.Content}}
+
+{{ end }}
