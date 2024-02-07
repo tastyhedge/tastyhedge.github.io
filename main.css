@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* @import "fira.css"; */
+
+@layer base {
+  @font-face {
+    font-family: "Fira Sans";
+    src: local("Fira Sans Regular"),
+      url("/font/fira/FiraSans-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: "Fira Mono";
+    src: local("Fira Mono"),
+      url("/font/fira/FiraMono-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  html {
+    font-family: "Fira Sans", Arial, sans-serif;
+    font-size: 18px;
+  }
+
+  a {
+    @apply underline;
+    @apply underline-offset-4;
+    @apply decoration-neutral-400;
+    @apply hover:decoration-amber-400;
+    /* @apply hover:text-blue-700; */
+
+    color: inherit;
+  }
+
+  address {
+    font-style: normal;
+  }
+
+  body {
+    /* color: theme("colors.neutral.800"); */
+
+    /*  80 ch + article.padding */
+    max-width: 80ch;
+  }
+
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: "Fira Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, "Liberation Mono", "Courier New", monospace; /* 1 */
+    font-size: 0.85em; /* 2 */
+  }
+
+  figure {
+    @apply pb-8;
+  }
+
+  h1 {
+    @apply bg-white font-bold mb-5 mt-2 px-3 py-3 text-3xl text-center tracking-tight;
+    @apply border-2 border-black border-solid;
+    box-shadow: 0.5rem 0.5rem black;
+  }
+
+  h2 {
+    @apply text-2xl pt-3 pb-2;
+    color: blue;
+  }
+
+  h3 {
+    @apply text-xl pt-2 pb-2;
+    color: blue;
+  }
+
+  header {
+    @apply pb-6;
+  }
+
+  html {
+    font-size: 18px;
+  }
+
+  li {
+    @apply ml-4 mb-6;
+  }
+
+  ol {
+    @apply list-decimal list-outside mb-4;
+  }
+
+  p {
+    @apply leading-relaxed mb-6 mt-0;
+  }
+
+  pre {
+    @apply bg-white border-neutral-400 border-solid mb-4 px-4 py-2 whitespace-pre-wrap;
+    border-width: 1px;
+  }
+
+  table {
+    @apply mb-4 m-auto;
+  }
+
+  table td,
+  th,
+  tr {
+    @apply align-top border border-neutral-300 p-1 text-center;
+  }
+
+  th {
+    @apply bg-neutral-200 px-4;
+  }
+
+  tr {
+    @apply bg-white px-4;
+  }
+
+  ul {
+    @apply list-disc list-outside mb-4;
+  }
+
+  /* Leading Paragraph */
+  .article-body > p:first-child {
+    @apply leading-relaxed mt-0 mb-8 text-lg text-stone-800;
+  }
+
+  .social-media:hover {
+    @apply no-underline;
+  }
+  .social-media img {
+    @apply mx-1 mb-1;
+    display: inline-block;
+    width: 26px;
+  }
+
+  .social-media img:hover {
+    transform: scale(1.25);
+  }
+}
+
+@media (max-width: 768px) {
+  .content {
+    @apply min-h-screen px-6;
+    @apply mx-0;
+  }
+
+  code,
+  kbd,
+  samp,
+  pre {
+    font-size: 0.75em;
+  }
+
+  header {
+    font-size: 90%;
+  }
+
+  html {
+    font-size: 14px;
+  }
+}

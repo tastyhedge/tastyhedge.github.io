@@ -6,9 +6,9 @@
 hugo:
 	rm public/ -rf && ./bin/hugo.exe
 hugo-serve:
-	./bin/hugo.exe server  --disableFastRender
+	./bin/hugo.exe server --disableFastRender
 tailwind-serve:
-	cd static && ../bin/tailwindcss.exe -i src/style.css -o css/style.css --watch
+	./bin/tailwindcss.exe -i main.css -o static/css/main.css --watch --content "layouts/**/*.html"
 
 s3-sync:
 	aws s3 sync --size-only ./public/ s3://tastyhedge.com/

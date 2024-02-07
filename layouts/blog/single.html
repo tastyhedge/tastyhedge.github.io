@@ -1,6 +1,31 @@
 {{ define "content" }}
 
-<h2>blog/blog.html</h2>
+<header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">{{ .Title }}</h1>
+    <p class="mb-0 flex justify-between">
+        <span class="my-auto">
+            <time class="dt-published" datetime='{{ .Date }}' itemprop="datePublished">
+                {{ time.Format "2006-01-24" .Date }}
+            </time>
+            —
+            <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+                <a href="/about" itemprop="name">{{ .Site.Author.name }}</a></span>
+        </span>
+        <span>
+            Follow on
+            <a href="https://www.linkedin.com/mynetwork/discovery-see-all/?usecase=PEOPLE_FOLLOWS&followMember=gituliar"
+                target="_blank" title="LinkedIn" class="social-media no-underline">
+                <img src="/img/brands/linkedin.svg" />
+            </a>
+            <a href="https://github.com/gituliar" target="_blank" title="GitHub" class="social-media no-underline">
+                <img src="/img/brands/github.svg" />
+            </a>
+            <!-- <a href="https://twitter.com/OGituliar" target="_blank" title="Twitter" class="social-media">
+          <img src="/assets/img/brands/twitter.svg" />
+        </a> -->
+        </span>
+    </p>
+</header>
 
 {{ .Content }}
 

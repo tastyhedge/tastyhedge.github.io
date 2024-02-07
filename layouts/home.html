@@ -1,21 +1,13 @@
 {{ define "content" }}
 
-<h2>home.html</h2>
-
-<a href="/blog">Blog</a>
-<a href="/about">About</a>
-
-{{ $pages := where .Site.AllPages "Section" "blog" }}
-
 <ul class="list-inside list-none">
-    {{ range $page := $pages }}
-    <h2><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></h2>
+    {{ range $page := where .Site.AllPages "Section" "blog" }}
+    <li class="m-0 py-2">
+        <a class="text-xl" href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+        <time class="block text-sm post-subtitle">{{ time.Format "2006-01-24" $page.Date }}</time>
+    </li>
     {{ end }}
 </ul>
-
-<hr />
-
-<h3>home.html - Content</h3>
 
 {{.Content}}
 

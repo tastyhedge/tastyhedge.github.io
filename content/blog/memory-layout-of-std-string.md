@@ -124,16 +124,16 @@ various standard libraries:
 **GCC stdlibc++**. The function directly copies `m_size` field into the output register (see
 <https://godbolt.org/z/7nYe9rWdE>):
 
-| Example                                                             | GCC libstdc++                                                            |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| ![string size C++ code](/assets/img/2023-08-07/string-size-src.png) | ![string size GCC assembler](/assets/img/2023-08-07/string-size-gcc.png) |
+| Example                                                      | GCC libstdc++                                                     |
+| ------------------------------------------------------------ | ----------------------------------------------------------------- |
+| ![string size C++ code](/img/2023-08-07/string-size-src.png) | ![string size GCC assembler](/img/2023-08-07/string-size-gcc.png) |
 
 **LLVM libc++**. The function at first checks if the string is short and then calculates its size
 (see <https://godbolt.org/z/xM349cG5P>).
 
-| Example                                                             | LLVM libc++                                                                |
-| ------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| ![string size C++ code](/assets/img/2023-08-07/string-size-src.png) | ![string size LLVM assembler](/assets/img/2023-08-07/string-size-llvm.png) |
+| Example                                                      | LLVM libc++                                                         |
+| ------------------------------------------------------------ | ------------------------------------------------------------------- |
+| ![string size C++ code](/img/2023-08-07/string-size-src.png) | ![string size LLVM assembler](/img/2023-08-07/string-size-llvm.png) |
 
 LLVM code remains more complex for other methods too. It's hard to say how badly this impacts the
 overall performance. The best advice is to keep this knowledge at hand and, for your particular use
