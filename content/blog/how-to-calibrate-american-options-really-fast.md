@@ -2,7 +2,7 @@
 layout: post
 date: 2024-02-08
 author: Oleksandr Gituliar
-title: "How-To Calibrate American Options: Really Fast"
+title: "How-To Calibrate American Options Really Fast"
 draft: true
 ---
 
