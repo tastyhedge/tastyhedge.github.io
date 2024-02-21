@@ -120,7 +120,7 @@ trading strategies.
 **Advanced statistic** with per-call distribution time of `calibrateEuropean`, collected with
 [Tracy](https://github.com/wolfpld/tracy) profiler, looks as following:
 
-![Step 1: Statistics](/img/calibrate-americans/calibrateEuropean.png)
+![Step 1: Statistics](calibrateEuropean.png)
 
 ## Step 2: American Pricing
 
@@ -214,7 +214,7 @@ GPU](blog/pricing-derivatives-on-a-budget/) for detailed benchmarks.
 **Advanced statistic** with per-call distribution time of `priceAmerican`, collected with
 [Tracy](https://github.com/wolfpld/tracy) profiler, looks as following:
 
-![Step 2: Statistics](/img/calibrate-americans/priceAmerican.png)
+![Step 2: Statistics](priceAmerican.png)
 
 ## Step 3: American Calibration
 
@@ -292,7 +292,7 @@ Rational](http://www.jaeckel.org/) by Jaeckel, but much slower if using the fini
 - At-the-money options, on the other hand, require several adjustment steps, hence more
   `priceAmerican` calls. This makes the whole calibration slower (see around 100 us region).
 
-![Step 3: Statistics](/img/calibrate-americans/calibrateAmerican.png)
+![Step 3: Statistics](calibrateAmerican.png)
 
 ## Conclusion
 
@@ -306,4 +306,4 @@ quotes of the Tesla options.
 Our approach allows to calibrate **16'500 opt/s** on a single AMD Ryzen 9 core. At this speed the
 entire market of **750'000 options** listed on **5'000 stocks** should take **45 s** to calibrate.
 
-![Summary](/img/calibrate-americans/stats.png)
+![Summary](stats.png)
