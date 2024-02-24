@@ -503,8 +503,10 @@ code,
   font-family: "Fira Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
       Consolas, "Liberation Mono", "Courier New", monospace;
   /* 1 */
-  font-size: 0.85em;
-  /* 2 */
+}
+
+pre * {
+  font-size: 0.9em;
 }
 
 figure {
@@ -756,12 +758,12 @@ ul {
   margin-bottom: auto;
 }
 
-.me-2 {
-  margin-inline-end: 0.5rem;
-}
-
 .mb-0 {
   margin-bottom: 0px;
+}
+
+.me-2 {
+  margin-inline-end: 0.5rem;
 }
 
 .block {
@@ -821,14 +823,14 @@ ul {
   padding-right: 3rem;
 }
 
-.py-4 {
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-}
-
 .py-2 {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 .pb-1 {
@@ -848,14 +850,14 @@ ul {
   line-height: 2rem;
 }
 
-.text-xl {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
-}
-
 .text-sm {
   font-size: 0.875rem;
   line-height: 1.25rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
 }
 
 .font-bold {

@@ -21,4 +21,4 @@ disableKinds = ["taxonomy", "taxonomyTerm"]
     lineNumbersInTable = false
     noClasses = true
     noHl = false
-    style = 'perldoc'
+    style = 'manni'

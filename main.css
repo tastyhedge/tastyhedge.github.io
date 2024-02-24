@@ -53,7 +53,9 @@
   pre {
     font-family: "Fira Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
       Consolas, "Liberation Mono", "Courier New", monospace; /* 1 */
-    font-size: 0.85em; /* 2 */
+  }
+  pre * {
+    font-size: 0.9em;
   }
 
   figure {
