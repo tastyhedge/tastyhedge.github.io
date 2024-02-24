@@ -1,40 +1,46 @@
 {{ define "content" }}
 
-<header class="post-header">
-  <h1 class="post-title p-name" itemprop="name headline">{{ .Title }}</h1>
-  <p class="mb-0 flex justify-between">
-    <span class="my-auto">
-      <time class="dt-published" datetime='{{ .Date }}' itemprop="datePublished">
-        {{ time.Format "2006-01-02" .Date }}
-      </time>
-      —
-      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <a href="/about" itemprop="name">{{ .Site.Author.name }}</a></span>
-    </span>
-    <span>
-      Follow on
-      <a href="https://www.linkedin.com/mynetwork/discovery-see-all/?usecase=PEOPLE_FOLLOWS&followMember=gituliar"
-        target="_blank" title="LinkedIn" class="social-media no-underline">
-        <img src="/img/brands/linkedin.svg" />
-      </a>
-      <a href="https://github.com/gituliar" target="_blank" title="GitHub" class="social-media no-underline">
-        <img src="/img/brands/github.svg" />
-      </a>
-      <!-- <a href="https://twitter.com/OGituliar" target="_blank" title="Twitter" class="social-media">
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    <h1 class="" itemprop="name headline">{{ .Title }}</h1>
+    <p class="mb-0 flex justify-between">
+      <span class="my-auto">
+        <time class="dt-published" datetime='{{ .Date }}' itemprop="datePublished">
+          {{ time.Format "2006-01-02" .Date }}
+        </time>
+        —
+        <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <a href="/about" itemprop="name">{{ .Site.Author.name }}</a></span>
+      </span>
+      <span>
+        Follow on
+        <a href="https://www.linkedin.com/mynetwork/discovery-see-all/?usecase=PEOPLE_FOLLOWS&followMember=gituliar"
+          target="_blank" title="LinkedIn" class="social-media no-underline">
+          <img src="/img/brands/linkedin.svg" />
+        </a>
+        <a href="https://github.com/gituliar" target="_blank" title="GitHub" class="social-media no-underline">
+          <img src="/img/brands/github.svg" />
+        </a>
+        <!-- <a href="https://twitter.com/OGituliar" target="_blank" title="Twitter" class="social-media">
           <img src="/assets/img/brands/twitter.svg" />
         </a> -->
-    </span>
-  </p>
-</header>
+      </span>
+    </p>
+  </header>
 
-{{ .Content }}
+  <div class="article-body" itemprop="articleBody">
+    {{ .Content }}
+  </div>
 
-{{ if eq hugo.Environment "production" }}
-<script src="https://giscus.app/client.js" data-repo="gituliar/tastyhedge.com" data-repo-id="R_kgDOLP4lzg"
-  data-category="General" data-category-id="DIC_kwDOLP4lzs4CdfL9" data-mapping="pathname" data-strict="0"
-  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="bottom" data-theme="light" data-lang="en"
-  crossorigin="anonymous" async>
-  </script>
-{{ end }}
+  {{ if eq hugo.Environment "production" }}
+  <div class="px-2">
+    <script src="https://giscus.app/client.js" data-repo="gituliar/tastyhedge.com" data-repo-id="R_kgDOLP4lzg"
+      data-category="General" data-category-id="DIC_kwDOLP4lzs4CdfL9" data-mapping="pathname" data-strict="0"
+      data-reactions-enabled="1" data-emit-metadata="0" data-input-position="bottom" data-theme="light_high_contrast"
+      data-lang="en" crossorigin="anonymous" async>
+      </script>
+  </div>
+  {{ end }}
+</article>
 
 {{ end }}
