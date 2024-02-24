@@ -7,7 +7,7 @@ serve:
 	./bin/hugo.exe server --buildDrafts
 build:
 	rm public/ -rf && ./bin/hugo.exe
-publish:
+deploy:
 	aws s3 sync --size-only ./public/ s3://tastyhedge.com/
 
 css:
