@@ -10,34 +10,37 @@ draft: true
 methods and open-source tools, so the calibration process will be really fast and accessible to
 everyone.
 
-Calibration is ... The purpose of the model itself is to quantify the risks of
-derivatives, which is an inevitable step to build advanced hedging and trading strategies.
+**Calibration** is a process of fitting model parameters to the market data. The purpose of the
+model itself is to quantify the risks, which is an inevitable step to build an advanced hedging and
+trading strategy.
 
-We consider Black-Scholes model with early exercise. It's suitable for pricing equity options, which
-are mostly of American style. Early-exercise models have no analytical solution and usually are
-solved with some time-consuming numerical method. We use a [boundary-interpolation]() method, which
-is available in [QuantLib](). This modern method is very fast and is essential for anyone interested
-in quantitative finance.
+**Black-Scholes model** with early exercise is our main focus. It's suitable for pricing equity
+options, which are mostly of American style. Models with the early-exercise feature have no
+analytical solution and usually are solved with time-consuming numerical methods. We'll use a
+[boundary-interpolation](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2547027) method, which
+is available in
+[QuantLib](https://hpcquantlib.wordpress.com/2022/10/09/high-performance-american-option-pricing/).
+This modern method is very fast and is essential for anyone interested in quantitative finance.
 
-**In my previous post**, we saw how to price American options with
+**In my previous post**, I discussed in details another method for pricing American options --
 [finite-difference](/blog/finite-difference-americans) method. This method is much slower, however
-more universal and can be used to solve a much broader range of problems, similar to Monte-Carlo.
-Every seasoned quant should master both methods.
+more universal and can be used to solve a broader range of problems, similar to Monte-Carlo. Every
+seasoned quant should master both methods.
 
-## Intro
+## Introduction
 
 **Trading options** is possible without a risk management strategy. You don't necessary need to
 understand a pricing model and all risk measures it calculates (like delta, vega, gamma, etc.).
 Option prices are available in the trading app that is provided by your broker. You can buy or even
 sell options pretty much like you do with stocks.
 
-**A naive approach** like that one, will eventually lead to a disaster very soon. Hence, if your
-intentions go beyond betting on a stock market using options, you'd better hedge your risks and keep
-under control risk limits of your portfolio.
+**A naive approach** like this, will eventually lead to a disaster very soon. Hence, if your
+intention goes beyond betting on a stock market with options, you'd better hedge your portfolio and
+keep under control your risk limits.
 
-**Implied volatility** is what defines the Black-Scholes model, which you need for risk management,
-as option prices alone can't quantify the underlying risks. Your broker will likely provide implied
-volatility data, however keep in mind that:
+**Implied volatility** is what defines the Black-Scholes model, which we consider to use for risk
+management, as option prices alone can't quantify the underlying risks. Your broker will likely
+provide implied volatility data, however keep in mind that:
 
 - **Pricing model** is another piece that you need to make IV useful. The model is an engine that
   quantifies the risks, given the implied volatility and observable market data (such as option
@@ -71,7 +74,7 @@ on that day, which gives 7'268 options every 5 min.
 **Risk analytics.** This sort of programs are proprietary and expensive, however we can calibrate
 ourselves. After all, that's what this post is about, so let's dive in.
 
-## Step1: European Calibration
+## Step 1: European Calibration
 
 **The first step** in our approach is to calibrate a European option. This gives a good guess for
 the American volatility, which we will improve later in Step 3.
@@ -109,7 +112,7 @@ calibrateEuropean(
 
 ### Performance
 
-**2'800'000 opt/s** is how many European options I'm able to calibrate on my machine with AMD Ryzen
+**2'800'000 opt/s** is as many European options I'm able to calibrate on my machine with AMD Ryzen
 9 CPU. You may wonder whether this is a lot or not ?
 
 **The options market** has about 750'000 options listed on 5'000 stocks. Hence, we can calibrate the
@@ -206,7 +209,7 @@ priceAmerican(f64 s, f64 k, f64 dte, f64 z, Parity w, f64& v)
 
 ### Performance
 
-**45'000 opt/s** is how many American options I can price on the same machine. It's not as
+**45'000 opt/s** is as many American options I can price on the same machine. It's not as
 impressive as 2'800'000 opt/s for European calibration. But it's about 100x faster than
 pricing with the finite-difference method. See my post on [pricing American options on CPU and
 GPU](blog/pricing-derivatives-on-a-budget/) for detailed benchmarks.
@@ -277,7 +280,7 @@ calibrateAmerican(f64 v_, f64 s, f64 k, f64 dte, kParity_ w, f64& z)
 
 ### Performance
 
-**16'500 opt/s** is how many American options I can calibrate on my machine. Effectively, we make 3
+**16'500 opt/s** is as many American options I can calibrate on my machine. Effectively, we make 3
 pricing calls per calibration. Eventually, it's 170x slower than European calibration with [Let's Be
 Rational](http://www.jaeckel.org/) by Jaeckel, but much slower if using the finite-difference.
 
