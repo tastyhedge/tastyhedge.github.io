@@ -628,6 +628,16 @@ ul {
 
 /* Leading Paragraph */
 
+.article-body > p:first-child {
+  margin-top: 0px;
+  margin-bottom: 2rem;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  line-height: 1.625;
+  --tw-text-opacity: 1;
+  color: rgb(41 37 36 / var(--tw-text-opacity));
+}
+
 .social-media:hover {
   text-decoration-line: none;
 }
@@ -821,6 +831,11 @@ ul {
 .px-12 {
   padding-left: 3rem;
   padding-right: 3rem;
+}
+
+.px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 .py-2 {

@@ -39,32 +39,34 @@
 
     
 
-<header class="post-header">
-  <h1 class="post-title p-name" itemprop="name headline">Memory Layout of std::string</h1>
-  <p class="mb-0 flex justify-between">
-    <span class="my-auto">
-      <time class="dt-published" datetime='2023-08-07 00:00:00 &#43;0000 UTC' itemprop="datePublished">
-        2023-08-07
-      </time>
-      —
-      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <a href="/about" itemprop="name">Oleksandr Gituliar</a></span>
-    </span>
-    <span>
-      Follow on
-      <a href="https://www.linkedin.com/mynetwork/discovery-see-all/?usecase=PEOPLE_FOLLOWS&followMember=gituliar"
-        target="_blank" title="LinkedIn" class="social-media no-underline">
-        <img src="/img/brands/linkedin.svg" />
-      </a>
-      <a href="https://github.com/gituliar" target="_blank" title="GitHub" class="social-media no-underline">
-        <img src="/img/brands/github.svg" />
-      </a>
-      
-    </span>
-  </p>
-</header>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    <h1 class="" itemprop="name headline">Memory Layout of std::string</h1>
+    <p class="mb-0 flex justify-between">
+      <span class="my-auto">
+        <time class="dt-published" datetime='2023-08-07 00:00:00 &#43;0000 UTC' itemprop="datePublished">
+          2023-08-07
+        </time>
+        —
+        <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <a href="/about" itemprop="name">Oleksandr Gituliar</a></span>
+      </span>
+      <span>
+        Follow on
+        <a href="https://www.linkedin.com/mynetwork/discovery-see-all/?usecase=PEOPLE_FOLLOWS&followMember=gituliar"
+          target="_blank" title="LinkedIn" class="social-media no-underline">
+          <img src="/img/brands/linkedin.svg" />
+        </a>
+        <a href="https://github.com/gituliar" target="_blank" title="GitHub" class="social-media no-underline">
+          <img src="/img/brands/github.svg" />
+        </a>
+        
+      </span>
+    </p>
+  </header>
 
-<p>For a professional C++ developer, it&rsquo;s important to understand memory organization of the data
+  <div class="article-body" itemprop="articleBody">
+    <p>For a professional C++ developer, it&rsquo;s important to understand memory organization of the data
 structures, especially when it comes to the containers from the C++ Standard Library. In this post
 of Tasty C++ series we&rsquo;ll look inside of <code>std::string</code>, so that you can more effectively work with
 C++ strings and take advantage and avoid pitfalls of the C++ Standard Library you are using.</p>
@@ -292,14 +294,18 @@ Laity with the <a href="https://news.ycombinator.com/item?id=22198158">discussio
 </ul>
 <p>TastyCode by Oleksandr Gituliar.</p>
 
+  </div>
 
-
-<script src="https://giscus.app/client.js" data-repo="gituliar/tastyhedge.com" data-repo-id="R_kgDOLP4lzg"
-  data-category="General" data-category-id="DIC_kwDOLP4lzs4CdfL9" data-mapping="pathname" data-strict="0"
-  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="bottom" data-theme="light" data-lang="en"
-  crossorigin="anonymous" async>
-  </script>
-
+  
+  <div class="px-2">
+    <script src="https://giscus.app/client.js" data-repo="gituliar/tastyhedge.com" data-repo-id="R_kgDOLP4lzg"
+      data-category="General" data-category-id="DIC_kwDOLP4lzs4CdfL9" data-mapping="pathname" data-strict="0"
+      data-reactions-enabled="1" data-emit-metadata="0" data-input-position="bottom" data-theme="light_high_contrast"
+      data-lang="en" crossorigin="anonymous" async>
+      </script>
+  </div>
+  
+</article>
 
 
   </div>
