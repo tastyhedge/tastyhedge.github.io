@@ -6,21 +6,37 @@
     <description>Recent content on TastyHedge</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 07 Aug 2023 00:00:00 +0000</lastBuildDate>
+    <managingEditor>oleksandr@gituliar.net (Oleksandr Gituliar)</managingEditor>
+    <webMaster>oleksandr@gituliar.net (Oleksandr Gituliar)</webMaster>
+    <lastBuildDate>Thu, 21 Dec 2023 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://tastyhedge.com/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Pricing Americans with Finite-Difference</title>
+      <link>https://tastyhedge.com/blog/finite-difference-americans/</link>
+      <pubDate>Thu, 21 Dec 2023 00:00:00 +0000</pubDate><author>oleksandr@gituliar.net (Oleksandr Gituliar)</author>
+      <guid>https://tastyhedge.com/blog/finite-difference-americans/</guid>
+      <description>In my previous post Pricing Derivatives on a Budget I discussed performance of the finite-difference algorithm for pricing American options on CPU vs GPU. Since then, people have asked to elaborate on the pricing algorithm itself. Hence, this post is dedicated to the Finite-Difference Method.&#xA;C++ is a great language to implement a finite-difference pricer on CPU and GPU. You&amp;rsquo;ll find full source code from the previous post on GitHub in gituliar/kwinto-cuda repo.</description>
+    </item>
+    <item>
+      <title>Pricing Derivatives on a Budget</title>
+      <link>https://tastyhedge.com/blog/pricing-derivatives-on-a-budget/</link>
+      <pubDate>Sun, 01 Oct 2023 00:00:00 +0000</pubDate><author>oleksandr@gituliar.net (Oleksandr Gituliar)</author>
+      <guid>https://tastyhedge.com/blog/pricing-derivatives-on-a-budget/</guid>
+      <description>After five years working as a quant, I can tell that the wast majority of derivative pricing in the financial industry is done on CPU. This is easily explained by two facts: (1) no GPU was available when banks started developing their pricing analytics in 90&amp;rsquo;s; and (2) banking is a conservative sector, slow to upgrade its technical stack.&#xA;American Options. In this post, I benchmark pricing of American Options on GPU.</description>
+    </item>
     <item>
       <title>Memory Layout of std::string</title>
       <link>https://tastyhedge.com/blog/memory-layout-of-std-string/</link>
-      <pubDate>Mon, 07 Aug 2023 00:00:00 +0000</pubDate>
+      <pubDate>Mon, 07 Aug 2023 00:00:00 +0000</pubDate><author>oleksandr@gituliar.net (Oleksandr Gituliar)</author>
       <guid>https://tastyhedge.com/blog/memory-layout-of-std-string/</guid>
       <description>For a professional C++ developer, it&amp;rsquo;s important to understand memory organization of the data structures, especially when it comes to the containers from the C++ Standard Library. In this post of Tasty C++ series we&amp;rsquo;ll look inside of std::string, so that you can more effectively work with C++ strings and take advantage and avoid pitfalls of the C++ Standard Library you are using.&#xA;In C++ Standard Library, std::string is one of the three contiguous containers (together with std::array and std::vector).</description>
     </item>
     <item>
       <title></title>
       <link>https://tastyhedge.com/about/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><author>oleksandr@gituliar.net (Oleksandr Gituliar)</author>
       <guid>https://tastyhedge.com/about/</guid>
-      <description>about.md </description>
+      <description>TastyHedge is a blog about programming and quantitative finance.&#xA;Author My name is Oleksandr and I&amp;rsquo;m the author of TastyHedge.&#xA;Industry. Working as a quant since 2018.&#xA;Academia. PhD in particle physics. See Google Scholar profile.&#xA;Resume. See on LinkedIn.&#xA;Contact. Write on LinkedIn or oleksandr@gituliar.net</description>
     </item>
   </channel>
 </rss>

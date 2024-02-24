@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HZRVS8S0KQ"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-HZRVS8S0KQ');
+    </script>
+    
+
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/code.css">
+    <link rel="icon" href="/favicon.ico">
+
+    
+</head>
+
+<body class="mx-auto bg-stone-200">
+    <div class="content bg-white pb-1 min-h-screen px-12 border-x-[1px] border-black">
+        <nav class="flex justify-between pb-6">
+            <a class="block font-bold my-auto text-2xl tracking-tighter text-inherit no-underline"
+                style="text-underline-offset: 6px;" href="/">
+                <img src="/img/logo/logo-32x32.png" class="inline-flex py-4 me-2 w-8"><span
+                    class="align-middle">TastyHedge</span>
+            </a>
+            <div class=" my-auto text-xl">
+                <a class="text-black" href="/about">About</a>
+            </div>
+        </nav>
+
+        
+
+<header class="post-header">
+  <h1 class="post-title p-name" itemprop="name headline">Pricing Americans with Finite-Difference</h1>
+  <p class="mb-0 flex justify-between">
+    <span class="my-auto">
+      <time class="dt-published" datetime='2023-12-21 00:00:00 &#43;0000 UTC' itemprop="datePublished">
+        2023-12-21
+      </time>
+      —
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <a href="/about" itemprop="name">Oleksandr Gituliar</a></span>
+    </span>
+    <span>
+      Follow on
+      <a href="https://www.linkedin.com/mynetwork/discovery-see-all/?usecase=PEOPLE_FOLLOWS&followMember=gituliar"
+        target="_blank" title="LinkedIn" class="social-media no-underline">
+        <img src="/img/brands/linkedin.svg" />
+      </a>
+      <a href="https://github.com/gituliar" target="_blank" title="GitHub" class="social-media no-underline">
+        <img src="/img/brands/github.svg" />
+      </a>
+      
+    </span>
+  </p>
+</header>
+
+<p>In my previous post <a href="/blog/pricing-derivatives-on-a-budget">Pricing Derivatives on a Budget</a> I
+discussed performance of the finite-difference algorithm for pricing American options on CPU vs GPU.
+Since then, people have asked to elaborate on the pricing algorithm itself. Hence, this post is
+dedicated to the <a href="https://en.wikipedia.org/wiki/Finite_difference_methods_for_option_pricing">Finite-Difference
+Method</a>.</p>
+<p><strong>C++ is a great language</strong> to implement a finite-difference pricer on CPU and GPU. You&rsquo;ll find full
+source code from the previous post on GitHub in
+<a href="https://github.com/gituliar/kwinto-cuda">gituliar/kwinto-cuda</a> repo. Here, I&rsquo;ll discuss some of its
+key parts.</p>
+<p>For C++ development, I recommend my standard setup: Visual Studio for Windows + CMake + vcpkg.
+Occasionally, I also compile on Ubuntu Linux with GCC and Clang, which is possible since I use CMake
+in my projects.</p>
+<p><strong>Pricing American options</strong> is an open problem in the quantitative finance. It has no closed form
+solution similar to the Black-Scholes formula for European options. Therefore, to solve this problem
+in practice various <em>numerical methods</em> are used.</p>
+<p>To continue, you don&rsquo;t need deep knowledge of the finite-difference method. This material should be
+accessible for people with basic understanding of C++ and numerical methods at the undergraduate level.</p>
+<p><strong>Calibration.</strong> For now we solve a pricing problem only, that is to find an option price given
+<em>implied volatility</em> and option parameters, like strike, expiry, etc. In practice, the implied
+volatility is unknown and should be determined given the option price from the exchange. This is
+known as <em>calibration</em> and is the inverse problem to pricing, which we&rsquo;ll focus on in another post.</p>
+<p>For example, below is a chain of option prices and already calibrated implied
+volatilities for AMD as of 2023-11-17 15:05:</p>
+<p><img src="/img/finite-difference-americans/amd-options.jpg" alt="AMD Option Chain"></p>
+<h2 id="pricing-equation">Pricing Equation</h2>
+<p><strong>American option&rsquo;s price</strong> is defined as a solution of the <a href="https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_equation">Black-Scholes
+equation</a>. In fact, it&rsquo;s the same
+equation that results into a famous <a href="https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model#Black%E2%80%93Scholes_formula">Black-Scholes
+formula</a>
+for European option. However, for American option we should impose an extra condition to account for
+the <em>early exercise</em>, which we discuss down below. It&rsquo;s this early-exercise condition that makes the
+original equation so difficult that we have no option, but to solve it numerically.</p>
+<p><strong>The Black-Scholes equation</strong> is just a particular example of the pricing differential equation. In
+general, we can define similar differential equations for various types and flavours of options and
+other derivatives, which can be treated with the same method. This versatility is what makes the
+finite-difference so popular among quants and widely used in financial institutions.</p>
+<p><strong>The pricing equation</strong> is usually derived using <a href="https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_equation#Derivation_of_the_Black%E2%80%93Scholes_PDE">Delta
+Hedging</a>
+argument, which is an intuitive and powerful approach to derive pricing equations, not only for
+vanilla options, but for exotic multi-asset derivatives as well.</p>
+<p>In practice, it&rsquo;s more convenient to change variables to <code>x = ln(s)</code> which leads to the following
+equation:</p>
+<p><img src="/img/finite-difference-americans/black-scholes.jpg" alt="Black Scholes PDE"></p>
+<h2 id="numerical-solution">Numerical Solution</h2>
+<p><strong>The Black-Scholes</strong> equation belongs to the family of <a href="https://en.wikipedia.org/wiki/Diffusion_equation">diffusion
+equations</a>, which in general case have no
+closed-form solution. Fortunately it&rsquo;s one of the easiest differential equations to solve
+numerically, which apart from the
+<a href="https://en.wikipedia.org/wiki/Finite_difference_method">Finite-Difference</a>, are usually treated
+with
+<a href="https://en.wikipedia.org/wiki/Monte_Carlo_methods_in_finance#Sample_paths_for_standard_models">Monte-Carlo</a>
+or <a href="https://en.wikipedia.org/wiki/Fourier_transform#Analysis_of_differential_equations">Fourier
+transformation</a>
+methods.</p>
+<p><strong>The Solution.</strong> Let&rsquo;s be more specific about the solution we are looking for. Our goal is to find
+the option price <em>function</em> <code>V(t,s)</code> at a fixed time <code>t=0</code> (today) for arbitrary spot price <code>s</code>.
+Here</p>
+<ul>
+<li><code>t</code> is time from today;</li>
+<li><code>s</code> is the spot price of the option&rsquo;s underlying asset. Although, it&rsquo;s more convenient to work
+with <code>x = ln(s)</code> instead.</li>
+</ul>
+<p>Let&rsquo;s continue with concrete steps of the finite-difference method:</p>
+<p><strong>1) Finite Grid.</strong> We define a <em>rectangular grid</em> on the domain of independent variables <code>(t,s)</code>
+which take</p>
+<ul>
+<li><code>t[i] = t[i-1] + dt[i] </code> for <code>i=0..N-1</code></li>
+<li><code>x[j] = x[j-1] + dx[j] </code> for <code>j=0..M-1</code>.</li>
+</ul>
+<p>This naturally leads to the following C++ definitions:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1</span><span>u32 xDim <span style="color:#555">=</span> <span style="color:#f60">512</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2</span><span>u32 tDim <span style="color:#555">=</span> <span style="color:#f60">1024</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4</span><span>std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>f64<span style="color:#555">&gt;</span> x(xDim);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5</span><span>std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>f64<span style="color:#555">&gt;</span> t(tDim);
+</span></span></code></pre></div><p><strong>2) <a href="https://en.wikipedia.org/wiki/Finite_difference#Basic_types">Difference Operators</a></strong> are used
+to approximate continuous derivatives in the original pricing equation. They are defined on the
+<code>(t,x)</code> grid as:</p>
+<p><img src="/img/finite-difference-americans/difference-operators.jpg" alt="Difference Operators"></p>
+<p><strong>3) Finite-Difference Equation</strong>, a discrete version of the Black-Scholes equation, is derived from
+the pricing equation by replacing continuous derivatives with difference operators defined in Step 2.</p>
+<p>It&rsquo;s convenient to introduce the A operator, which contains difference operators over the x-axis
+only.</p>
+<p><img src="/img/finite-difference-americans/difference-equation.jpg" alt="Difference Equation"></p>
+<p><strong>4) Solution Scheme.</strong> The above equation isn&rsquo;t completely defined yet, as we can expand
+<strong>\delta_t</strong> operator in several ways. (<strong>\delta_x and \delta_xx</strong> operators are generally chosen
+according to the central difference definition.)</p>
+<p><strong>\delta_t</strong> operator might be chosen as <a href="https://en.wikipedia.org/wiki/Euler_method"><em>Forward</em> or
+<em>Backward</em> difference</a>, which lead to the <a href="https://en.wikipedia.org/wiki/Finite_difference_method#Explicit_method">explicit
+scheme</a> solution. In this
+case, the numerical error is O(dt) + O(dx^2), which is not the best we can achieve.</p>
+<p><strong><a href="https://en.wikipedia.org/wiki/Finite_difference_method#Crank%E2%80%93Nicolson_method">Crank-Nicolson</a>
+scheme</strong>, an implicit scheme, is a better alternative to the explicit scheme. It&rsquo;s slightly more
+complicated, since requires to solve a liner system of equations, however the numerical error is
+O(dt^2) + O(dx^2), which is much better than for the explicit schemes.</p>
+<p>You can think of the Crank-Nicolson scheme as a continuos mix of forward and backward schemes tuned
+by \theta parameter, so that</p>
+<ul>
+<li><code>\theta = 1</code> is Euler forward scheme</li>
+<li><code>\theta = 0</code> is Euler backward</li>
+<li><code>\theta = 1/2</code> is Crank-Nicolson scheme</li>
+</ul>
+<p><img src="/img/finite-difference-americans/finite-difference.jpg" alt="Finite-Difference Schemes"></p>
+<p><strong>5) Backward Evolution.</strong> I guess at this point it&rsquo;s clear what our next step should be. All we
+need is to solve a <em>tridiagonal</em> linear system in order to find <code>V(t_i)</code> from <code>V(t_i+1)</code> as is
+prescribed by the Crank-Nicolson method above. The <em>initial value</em> is given by the option price at
+maturity <code>V(t=T)</code>, which is equal to the <em>payoff</em> or <em>intrinsic value</em> for a given strike <code>k</code>, in
+other words</p>
+<ul>
+<li><code>max(s-k, 0)</code> for calls,</li>
+<li><code>max(k-s, 0)</code> for puts.</li>
+</ul>
+<p><a href="https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm">Thomas algorithm</a> is a simplified
+form of Gaussian elimination that is used to solve tridiagonal systems of linear equations. For
+such systems, the solution can be obtained in O(n) operations instead of O(n^3) required by
+Gaussian elimination, which makes this step relatively fast.</p>
+<p>C++ implementation of the Thomas solver is compact and widely available, for example, see <a href="https://numerical.recipes/">Numerical
+Recipes</a>. I list it below for completeness:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1</span><span>Error
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2</span><span><span style="color:#c0f">solveTridiagonal</span>(
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3</span><span>    <span style="color:#069;font-weight:bold">const</span> <span style="color:#078;font-weight:bold">int</span> xDim,
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4</span><span>    <span style="color:#069;font-weight:bold">const</span> f64<span style="color:#555">*</span> al, <span style="color:#069;font-weight:bold">const</span> f64<span style="color:#555">*</span> a, <span style="color:#069;font-weight:bold">const</span> f64<span style="color:#555">*</span> au,    <span style="color:#09f;font-style:italic">/// LHS
+</span></span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5</span><span><span style="color:#09f;font-style:italic"></span>    <span style="color:#069;font-weight:bold">const</span> f64<span style="color:#555">*</span> y,                                  <span style="color:#09f;font-style:italic">/// RHS
+</span></span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6</span><span><span style="color:#09f;font-style:italic"></span>    f64<span style="color:#555">*</span> x)                                        <span style="color:#09f;font-style:italic">/// Solution
+</span></span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7</span><span><span style="color:#09f;font-style:italic"></span>{
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8</span><span>    <span style="color:#069;font-weight:bold">if</span> (a[<span style="color:#f60">0</span>] <span style="color:#555">==</span> <span style="color:#f60">0</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9</span><span>        <span style="color:#069;font-weight:bold">return</span> <span style="color:#c30">&#34;solveTridiagonal: Error 1&#34;</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10</span><span>    <span style="color:#069;font-weight:bold">if</span> (xDim <span style="color:#555">&lt;=</span> <span style="color:#f60">2</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11</span><span>        <span style="color:#069;font-weight:bold">return</span> <span style="color:#c30">&#34;solveTridiagonal: Error 2&#34;</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13</span><span>    std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>f64<span style="color:#555">&gt;</span> gam(xDim);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15</span><span>    f64 bet;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16</span><span>    x[<span style="color:#f60">0</span>] <span style="color:#555">=</span> y[<span style="color:#f60">0</span>] <span style="color:#555">/</span> (bet <span style="color:#555">=</span> a[<span style="color:#f60">0</span>]);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17</span><span>    <span style="color:#069;font-weight:bold">for</span> (<span style="color:#069;font-weight:bold">auto</span> j <span style="color:#555">=</span> <span style="color:#f60">1</span>; j <span style="color:#555">&lt;</span> xDim; j<span style="color:#555">++</span>) {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18</span><span>        gam[j] <span style="color:#555">=</span> au[j <span style="color:#555">-</span> <span style="color:#f60">1</span>] <span style="color:#555">/</span> bet;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19</span><span>        bet <span style="color:#555">=</span> a[j] <span style="color:#555">-</span> al[j] <span style="color:#555">*</span> gam[j];
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21</span><span>        <span style="color:#069;font-weight:bold">if</span> (bet <span style="color:#555">==</span> <span style="color:#f60">0</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22</span><span>            <span style="color:#069;font-weight:bold">return</span> <span style="color:#c30">&#34;solveTridiagonal: Error 3&#34;</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24</span><span>        x[j] <span style="color:#555">=</span> (y[j] <span style="color:#555">-</span> al[j] <span style="color:#555">*</span> x[j <span style="color:#555">-</span> <span style="color:#f60">1</span>]) <span style="color:#555">/</span> bet;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25</span><span>        <span style="color:#069;font-weight:bold">if</span> (x[j] <span style="color:#555">&lt;</span> <span style="color:#f60">0</span>)
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26</span><span>            <span style="color:#069;font-weight:bold">continue</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27</span><span>    };
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29</span><span>    <span style="color:#069;font-weight:bold">for</span> (<span style="color:#069;font-weight:bold">auto</span> j <span style="color:#555">=</span> xDim <span style="color:#555">-</span> <span style="color:#f60">2</span>; j <span style="color:#555">&gt;=</span> <span style="color:#f60">0</span>; <span style="color:#555">--</span>j) {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30</span><span>        x[j] <span style="color:#555">-=</span> gam[j <span style="color:#555">+</span> <span style="color:#f60">1</span>] <span style="color:#555">*</span> x[j <span style="color:#555">+</span> <span style="color:#f60">1</span>];
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31</span><span>    }
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33</span><span>    <span style="color:#069;font-weight:bold">return</span> <span style="color:#c30">&#34;&#34;</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34</span><span>};
+</span></span></code></pre></div><p><strong>6) Early Exercise.</strong> For American options we should taken into account the right to exercise
+before maturity. As already mention, this particular feature make the Black-Scholes equation more
+complicated with no closed-form solution.</p>
+<p>I account for this at every backward evolution step like this:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1</span><span><span style="color:#069;font-weight:bold">for</span> (<span style="color:#069;font-weight:bold">auto</span> xi <span style="color:#555">=</span> <span style="color:#f60">0</span>; xi <span style="color:#555">&lt;</span> xDim; <span style="color:#555">++</span>xi) {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2</span><span>    v[xi] <span style="color:#555">=</span> std<span style="color:#555">::</span>max(v[xi], vInit[xi]);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3</span><span>}
+</span></span></code></pre></div><p><img src="/img/finite-difference-americans/early-exercise.jpg" alt="Early Exercise"></p>
+<h2 id="boundary-conditions">Boundary Conditions</h2>
+<p>You probably noticed that our definition of the difference operators on the grid is incomplete.
+Namely, the x-axis difference is not well defined at boundaries of the grid.</p>
+<p><strong>At boundaries</strong>, difference operators over the x-axis are not well defined as some values outside
+of the grid are missing. For example,</p>
+<pre tabindex="0"><code>V&#39;(x_0) = (V(x_1) - V(x_-1)) / (x_1 - x_-1)
+</code></pre><p>however <code>x_-1</code> and <code>V(x_-1)</code> are not defined.</p>
+<p>We overcome this by taking into account the asymptotic behavior of the price function <code>V(t,s)</code> at
+boundaries of <code>s</code>, when <code>s -&gt; 0</code> and <code>s -&gt; +oo</code>.</p>
+<p>We know that <code>delta</code> is constant at boundaries, either 0 or 1, depending on the parity (PUT or
+CALL). However, more universal relation is that <code>gamma = 0</code> at boundaries. This gives the following
+relation:</p>
+<p><img src="/img/finite-difference-americans/boundary-conditions.jpg" alt="Boundary Conditions"></p>
+<h2 id="finite-difference-grid">Finite-Difference Grid</h2>
+<p>Finally, it&rsquo;s time to discuss how grid points are distributed over <code>x</code>- and <code>t</code>-axes. So far we just
+said that there are <code>N</code> and <code>M</code> points along each axis, but said nothing about the limits and
+distribution of those points. In other words, what are the values <code>x[0]</code> / <code>x[M-1]</code> and gaps <code>dt[i] = t[i+1] - t[i]</code> and <code>dx[i] = x[i+1] - x[i]</code> ?</p>
+<p><strong>The t-Axis</strong> is divided uniformly with a step dt = T / N between points. It doesn&rsquo;t seem to use
+some non-uniform step here, at least not something I observed in practice.</p>
+<p><strong>The x-Axis</strong> is divided in a more tricky way. &hellip;</p>
+<p><img src="/img/finite-difference-americans/place-grid-points.jpg" alt="Placing Grid Points"></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1</span><span><span style="color:#09f;font-style:italic">/// Init X-Grid
+</span></span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2</span><span><span style="color:#09f;font-style:italic"></span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3</span><span><span style="color:#069;font-weight:bold">const</span> f64 density <span style="color:#555">=</span> <span style="color:#f60">0.1</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4</span><span><span style="color:#069;font-weight:bold">const</span> f64 scale <span style="color:#555">=</span> <span style="color:#f60">10</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6</span><span><span style="color:#069;font-weight:bold">const</span> f64 xMid <span style="color:#555">=</span> log(s);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7</span><span><span style="color:#069;font-weight:bold">const</span> f64 xMin <span style="color:#555">=</span> xMid <span style="color:#555">-</span> scale <span style="color:#555">*</span> z <span style="color:#555">*</span> sqrt(t);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8</span><span><span style="color:#069;font-weight:bold">const</span> f64 xMax <span style="color:#555">=</span> xMid <span style="color:#555">+</span> scale <span style="color:#555">*</span> z <span style="color:#555">*</span> sqrt(t);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10</span><span><span style="color:#069;font-weight:bold">const</span> f64 yMin <span style="color:#555">=</span> std<span style="color:#555">::</span>asinh((xMin <span style="color:#555">-</span> xMid) <span style="color:#555">/</span> density);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11</span><span><span style="color:#069;font-weight:bold">const</span> f64 yMax <span style="color:#555">=</span> std<span style="color:#555">::</span>asinh((xMax <span style="color:#555">-</span> xMid) <span style="color:#555">/</span> density);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13</span><span><span style="color:#069;font-weight:bold">const</span> f64 dy <span style="color:#555">=</span> <span style="color:#f60">1.</span> <span style="color:#555">/</span> (xDim <span style="color:#555">-</span> <span style="color:#f60">1</span>);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14</span><span><span style="color:#069;font-weight:bold">for</span> (<span style="color:#069;font-weight:bold">auto</span> j <span style="color:#555">=</span> <span style="color:#f60">0</span>; j <span style="color:#555">&lt;</span> xDim; j<span style="color:#555">++</span>) {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15</span><span>    <span style="color:#069;font-weight:bold">const</span> f64 y <span style="color:#555">=</span> j <span style="color:#555">*</span> dy;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16</span><span>    xGrid(j) <span style="color:#555">=</span> xMid <span style="color:#555">+</span> density <span style="color:#555">*</span> std<span style="color:#555">::</span>sinh(yMin <span style="color:#555">*</span> (<span style="color:#f60">1.0</span> <span style="color:#555">-</span> y) <span style="color:#555">+</span> yMax <span style="color:#555">*</span> y);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17</span><span>}
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18</span><span>
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19</span><span><span style="color:#09f;font-style:italic">/// Inspired by https://github.com/lballabio/QuantLib files:
+</span></span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20</span><span><span style="color:#09f;font-style:italic">///   - fdmblackscholesmesher.cpp
+</span></span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21</span><span><span style="color:#09f;font-style:italic">///   - fdblackscholesvanillaengine.cpp
+</span></span></span></code></pre></div><h2 id="conclusion">Conclusion</h2>
+<p>In this post I elaborated on some key parts of my C++ implementation of the finite-difference pricer
+for American options, which is available in
+<a href="https://github.com/gituliar/kwinto-cuda">gituliar/kwinto-cuda</a> repo on GitHub. The method itself
+can be applied to a wide range of problems in finance which makes it so popular among quants.</p>
+<p>Also, take a look at my previous post <a href="/blog/pricing-derivatives-on-a-budget">Pricing Derivatives on a
+Budget</a>, where I discussed performance of this finite-difference
+algorithm for pricing American options on CPU vs GPU.</p>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="https://github.com/brnohu/CompFin">Lectures on Finite-Difference Methods</a> by Andreasen and Huge</li>
+<li><a href="https://numerical.recipes/book.html">Numerical Recipes in C++</a></li>
+</ul>
+
+
+
+    </div>
+
+    <script>
+        document.querySelectorAll('a[href^="http"]').forEach(function (e) {
+            e.setAttribute('target', '_blank');
+        });
+    </script>
+</body>
+
+</html>

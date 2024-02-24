@@ -17,11 +17,11 @@
     </script>
     
 
-    <link rel="stylesheet" href="/assets/css/main.css">
-    <link rel="stylesheet" href="/assets/css/code.css">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/code.css">
     <link rel="icon" href="/favicon.ico">
 
-    {% seo %}
+    
 </head>
 
 <body class="mx-auto bg-stone-200">
@@ -29,7 +29,7 @@
         <nav class="flex justify-between pb-6">
             <a class="block font-bold my-auto text-2xl tracking-tighter text-inherit no-underline"
                 style="text-underline-offset: 6px;" href="/">
-                <img src="/assets/img/logo/logo-32x32.png" class="inline-flex py-4 me-2 w-8"><span
+                <img src="/img/logo/logo-32x32.png" class="inline-flex py-4 me-2 w-8"><span
                     class="align-middle">TastyHedge</span>
             </a>
             <div class=" my-auto text-xl">
@@ -39,7 +39,30 @@
 
         
 
-<h2>blog/blog.html</h2>
+<header class="post-header">
+  <h1 class="post-title p-name" itemprop="name headline">Memory Layout of std::string</h1>
+  <p class="mb-0 flex justify-between">
+    <span class="my-auto">
+      <time class="dt-published" datetime='2023-08-07 00:00:00 &#43;0000 UTC' itemprop="datePublished">
+        2023-08-07
+      </time>
+      —
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <a href="/about" itemprop="name">Oleksandr Gituliar</a></span>
+    </span>
+    <span>
+      Follow on
+      <a href="https://www.linkedin.com/mynetwork/discovery-see-all/?usecase=PEOPLE_FOLLOWS&followMember=gituliar"
+        target="_blank" title="LinkedIn" class="social-media no-underline">
+        <img src="/img/brands/linkedin.svg" />
+      </a>
+      <a href="https://github.com/gituliar" target="_blank" title="GitHub" class="social-media no-underline">
+        <img src="/img/brands/github.svg" />
+      </a>
+      
+    </span>
+  </p>
+</header>
 
 <p>For a professional C++ developer, it&rsquo;s important to understand memory organization of the data
 structures, especially when it comes to the containers from the C++ Standard Library. In this post
@@ -66,11 +89,11 @@ data fields:</p>
 <li><strong>Capacity</strong> – the max number of character the buffer can fit, a size of the buffer.</li>
 </ul>
 <p>Talking C++ language, this picture could be expressed as the following class:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">TastyString</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>    m_buffer;     <span style="color:#75715e">//  string characters
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    size_t    m_size;       <span style="color:#75715e">//  number of characters
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    size_t    m_capacity;   <span style="color:#75715e">//  m_buffer size
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1</span><span><span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">TastyString</span> {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2</span><span>    <span style="color:#078;font-weight:bold">char</span> <span style="color:#555">*</span>    m_buffer;     <span style="color:#09f;font-style:italic">//  string characters
+</span></span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3</span><span><span style="color:#09f;font-style:italic"></span>    size_t    m_size;       <span style="color:#09f;font-style:italic">//  number of characters
+</span></span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4</span><span><span style="color:#09f;font-style:italic"></span>    size_t    m_capacity;   <span style="color:#09f;font-style:italic">//  m_buffer size
+</span></span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5</span><span><span style="color:#09f;font-style:italic"></span>}
 </span></span></code></pre></div><p>This representation takes <em>24 bytes</em> and is very close to the production code.</p>
 <p>Let&rsquo;s see how this compares to the <strong>actual size</strong> of <code>std::string</code>. This is given by
 <code>sizeof(std::string)</code> and in the most popular implementations of the C++ Standard Library is the
@@ -162,8 +185,8 @@ various standard libraries:</p>
 </thead>
 <tbody>
 <tr>
-<td><img src="/assets/img/2023-08-07/string-size-src.png" alt="string size C++ code"></td>
-<td><img src="/assets/img/2023-08-07/string-size-gcc.png" alt="string size GCC assembler"></td>
+<td><img src="/img/2023-08-07/string-size-src.png" alt="string size C++ code"></td>
+<td><img src="/img/2023-08-07/string-size-gcc.png" alt="string size GCC assembler"></td>
 </tr>
 </tbody>
 </table>
@@ -178,8 +201,8 @@ various standard libraries:</p>
 </thead>
 <tbody>
 <tr>
-<td><img src="/assets/img/2023-08-07/string-size-src.png" alt="string size C++ code"></td>
-<td><img src="/assets/img/2023-08-07/string-size-llvm.png" alt="string size LLVM assembler"></td>
+<td><img src="/img/2023-08-07/string-size-src.png" alt="string size C++ code"></td>
+<td><img src="/img/2023-08-07/string-size-llvm.png" alt="string size LLVM assembler"></td>
 </tr>
 </tbody>
 </table>
@@ -199,23 +222,23 @@ how the capacity changes as the string grows one character at a time in a loop:<
 <ul>
 <li>
 <p><strong>MSVC STL</strong></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>size_t <span style="color:#a6e22e">newCapacity</span>(size_t newSize, size_t oldCap) {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> max(newSize, oldCap <span style="color:#f92672">+</span> oldCap <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>);
-</span></span><span style="display:flex;"><span>}
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1</span><span>size_t <span style="color:#c0f">newCapacity</span>(size_t newSize, size_t oldCap) {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2</span><span>    <span style="color:#069;font-weight:bold">return</span> max(newSize, oldCap <span style="color:#555">+</span> oldCap <span style="color:#555">/</span> <span style="color:#f60">2</span>);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3</span><span>}
 </span></span></code></pre></div><p>Capacity growth: 15, 31, 47, 70, 105, 157, 235, 352, 528, 792, 1'188, 1'782.</p>
 </li>
 <li>
 <p><strong>GCC libstdc++</strong></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>size_t <span style="color:#a6e22e">newCapacity</span>(size_t newSize, size_t oldCap) {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> max(newSize <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> oldCap);
-</span></span><span style="display:flex;"><span>}
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1</span><span>size_t <span style="color:#c0f">newCapacity</span>(size_t newSize, size_t oldCap) {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2</span><span>    <span style="color:#069;font-weight:bold">return</span> max(newSize <span style="color:#555">+</span> <span style="color:#f60">1</span>, <span style="color:#f60">2</span> <span style="color:#555">*</span> oldCap);
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3</span><span>}
 </span></span></code></pre></div><p>Capacity growth: 15, 30, 60, 120, 240, 480, 960, 1'920, 3'840, 7'680, 15'360.</p>
 </li>
 <li>
 <p><strong>LLVM libc++</strong></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>size_t <span style="color:#a6e22e">newCapacity</span>(size_t newSize, size_t oldCap) {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> max(newSize, <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> oldCap) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>;
-</span></span><span style="display:flex;"><span>}
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1</span><span>size_t <span style="color:#c0f">newCapacity</span>(size_t newSize, size_t oldCap) {
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2</span><span>    <span style="color:#069;font-weight:bold">return</span> max(newSize, <span style="color:#f60">2</span> <span style="color:#555">*</span> oldCap) <span style="color:#555">+</span> <span style="color:#f60">1</span>;
+</span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3</span><span>}
 </span></span></code></pre></div><p>Capacity growth: 22, 47, 95, 191, 383, 767, 1'535, 3'071, 6'143, 12'287.</p>
 </li>
 </ul>
