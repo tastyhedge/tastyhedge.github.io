@@ -2,15 +2,20 @@
 
 <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
   <header>
+    {{ if .Params.Cover }}
+    <img class="pb-4" alt="Title image" src="{{.Params.Cover}}" />
+    {{ else }}
     <h1 class="" itemprop="name headline">{{ .Title }}</h1>
+    {{ end }}
+
     <p class="mb-0 flex justify-between">
       <span class="my-auto">
-        <time class="dt-published" datetime='{{ .Date }}' itemprop="datePublished">
-          {{ time.Format "2006-01-02" .Date }}
+        <time class="dt-published" datetime='{{ .PublishDate }}' itemprop="datePublished">
+          {{ time.Format "2006-01-02" .PublishDate }}
         </time>
         —
         <span itemprop="author" itemscope itemtype="http://schema.org/Person">
-          <a href="/about" itemprop="name">{{ .Site.Author.name }}</a></span>
+          <a href="/about" itemprop="name">{{ .Site.Params.Author.name }}</a></span>
       </span>
       <span>
         Follow on

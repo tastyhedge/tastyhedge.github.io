@@ -1,10 +1,10 @@
-baseURL = 'https://tastyhedge.com/'
+baseURL = "https://tastyhedge.com/"
 languageCode = 'en-us'
 title = 'TastyHedge'
 
 disableKinds = ["taxonomy", "taxonomyTerm"]
 
-[author]
+[params.author]
   name = "Oleksandr Gituliar"
   email = "oleksandr@gituliar.net"
 

@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="{{ .Site.Params.Author.name }}">
 
   {{ if eq hugo.Environment "production" }}
   <!-- Google tag (gtag.js) -->
@@ -21,11 +22,13 @@
   <link rel="stylesheet" href="/css/code.css">
   <link rel="icon" href="/favicon.ico">
 
+  {{ template "_internal/opengraph.html" . }}
+
   <!-- {% seo %} -->
 </head>
 
 <body class="mx-auto bg-stone-200">
-  <div class="bg-white pb-1 min-h-screen px-12 border-x-[1px] border-black">
+  <div class="bg-white pb-1 min-h-screen px-4 md:px-12 border-x-[1px] border-black">
     <nav class="flex justify-between pb-6">
       <a class="block font-bold my-auto text-2xl tracking-tighter text-inherit no-underline"
         style="text-underline-offset: 6px;" href="/">
