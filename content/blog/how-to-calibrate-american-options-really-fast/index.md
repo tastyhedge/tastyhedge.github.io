@@ -1,9 +1,10 @@
 ---
 layout: post
-date: 2024-02-08
+publishDate: 2024-02-08
 author: Oleksandr Gituliar
 title: "How-To Calibrate American Options Really Fast"
-draft: true
+cover: cover.png
+draft: false
 ---
 
 **In this post**, you will learn how to calibrate American options in C++. We will use modern
