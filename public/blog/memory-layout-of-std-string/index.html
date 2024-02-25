@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Oleksandr Gituliar">
 
   
   
@@ -21,11 +22,20 @@
   <link rel="stylesheet" href="/css/code.css">
   <link rel="icon" href="/favicon.ico">
 
+  <meta property="og:title" content="Memory Layout of std::string" />
+<meta property="og:description" content="About memory layout of std::string in the most popular c&#43;&#43; standard libraries: MSVC STL, GCC libstdc&#43;&#43;, LLVM libc&#43;&#43;." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://tastyhedge.com/blog/memory-layout-of-std-string/" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2023-08-07T00:00:00+00:00" />
+<meta property="article:modified_time" content="2023-08-07T00:00:00+00:00" />
+
+
+
   
 </head>
 
 <body class="mx-auto bg-stone-200">
-  <div class="bg-white pb-1 min-h-screen px-12 border-x-[1px] border-black">
+  <div class="bg-white pb-1 min-h-screen px-4 md:px-12 border-x-[1px] border-black">
     <nav class="flex justify-between pb-6">
       <a class="block font-bold my-auto text-2xl tracking-tighter text-inherit no-underline"
         style="text-underline-offset: 6px;" href="/">
@@ -41,7 +51,10 @@
 
 <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
   <header>
+    
     <h1 class="" itemprop="name headline">Memory Layout of std::string</h1>
+    
+
     <p class="mb-0 flex justify-between">
       <span class="my-auto">
         <time class="dt-published" datetime='2023-08-07 00:00:00 &#43;0000 UTC' itemprop="datePublished">
