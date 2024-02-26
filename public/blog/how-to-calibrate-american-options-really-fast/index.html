@@ -23,13 +23,13 @@
   <link rel="icon" href="/favicon.ico">
 
   <meta property="og:title" content="How-To Calibrate American Options Really Fast" />
-<meta property="og:description" content="In this post, you will learn how to calibrate American options in C&#43;&#43;. We will use modern methods and open-source tools, so the calibration process will be really fast and accessible to everyone.
-Source code is located in gituliar/tastyhedge on GitHub. You can build and run it yourself on Linux / Windows or use it as an inspiration for your own projects. Market data
-Calibration is a process of fitting model parameters to the market data." />
+<meta property="og:description" content="In this post, you will learn how to calibrate American options in C&#43;&#43; with modern methods and open-source tools, so that calibration will be really fast with source code open to review.
+Source code itself is located in gituliar/tastyhedge repo on GitHub, which you can build and run it on Linux or Windows. This repo also contains all necessary market data to reproduce discussed examples.
+Calibration is a process of fitting parameters of the model to the market data." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://tastyhedge.com/blog/how-to-calibrate-american-options-really-fast/" /><meta property="og:image" content="https://tastyhedge.com/blog/how-to-calibrate-american-options-really-fast/cover.png" /><meta property="article:section" content="blog" />
-<meta property="article:published_time" content="2024-02-08T00:00:00+00:00" />
-<meta property="article:modified_time" content="2024-02-08T00:00:00+00:00" />
+<meta property="article:published_time" content="2024-02-26T00:00:00+00:00" />
+<meta property="article:modified_time" content="2024-02-26T00:00:00+00:00" />
 
 
 
@@ -59,8 +59,8 @@ Calibration is a process of fitting model parameters to the market data." />
 
     <p class="mb-0 flex justify-between">
       <span class="my-auto">
-        <time class="dt-published" datetime='2024-02-08 00:00:00 &#43;0000 UTC' itemprop="datePublished">
-          2024-02-08
+        <time class="dt-published" datetime='2024-02-26 00:00:00 &#43;0000 UTC' itemprop="datePublished">
+          2024-02-26
         </time>
         —
         <span itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -81,15 +81,14 @@ Calibration is a process of fitting model parameters to the market data." />
   </header>
 
   <div class="article-body" itemprop="articleBody">
-    <p><strong>In this post</strong>, you will learn how to calibrate American options in C++. We will use modern
-methods and open-source tools, so the calibration process will be really fast and accessible to
-everyone.</p>
-<p><strong>Source code</strong> is located in <a href="https://github.com/gituliar/tastyhedge">gituliar/tastyhedge</a> on
-GitHub. You can build and run it yourself on Linux / Windows or use it as an inspiration for your
-own projects. <em>Market data</em></p>
-<p><strong>Calibration</strong> is a process of fitting model parameters to the market data. The purpose of the
-model itself is to quantify the risks, which is an inevitable step to build advanced hedging and
-trading strategies.</p>
+    <p><strong>In this post</strong>, you will learn how to calibrate American options in C++ with modern methods and
+open-source tools, so that calibration will be really fast with source code open to review.</p>
+<p><strong>Source code</strong> itself is located in <a href="https://github.com/gituliar/tastyhedge">gituliar/tastyhedge</a>
+repo on GitHub, which you can build and run it on Linux or Windows. This repo also contains all
+necessary market data to reproduce discussed examples.</p>
+<p><strong>Calibration</strong> is a process of fitting parameters of the model to the market data. The model itself
+is used to quantify risks due to the market moves. This is an inevitable step in building advanced
+hedging and trading strategies.</p>
 <p><strong>Black-Scholes model</strong> with early exercise is our main focus. It&rsquo;s suitable for pricing equity
 options, which are mostly of American style. Models with the early-exercise feature have no
 analytical solution and usually are solved with time-consuming numerical methods. We&rsquo;ll use a
@@ -109,34 +108,26 @@ sell options pretty much like you do with stocks.</p>
 <p><strong>A naive approach</strong> like this, will eventually lead to a disaster very soon. Hence, if your
 intention goes beyond betting on a stock market with options, you&rsquo;d better hedge your portfolio and
 keep under control your risk limits.</p>
-<p><strong>Implied volatility</strong> is what defines the Black-Scholes model, which we consider to use for risk
-management, as option prices alone can&rsquo;t quantify the underlying risks. Your broker will likely
-provide implied volatility data, however keep in mind that:</p>
-<ul>
-<li><strong>Pricing model</strong> is another piece that you need to make IV useful. The model is an engine that
-quantifies the risks, given the implied volatility and observable market data (such as option
-price, stock price, interest rate, and dividend rate). For example, it might differ if you use
-Black-Scholes model for American or European options.</li>
-<li><strong>Market Data</strong> Option exchanges do not provide implied volatility and should be calculated by the
-broker itself. This is a non-trivial and time-consuming task&hellip;</li>
-</ul>
+<p><strong>Volatility</strong> is the only parameter of the Black-Scholes model. We consider to use this model for
+risk management as option prices alone can&rsquo;t quantify the market risk. Your broker will likely
+provide implied volatility data.</p>
 <h2 id="prerequisite">Prerequisite</h2>
 <p><strong>Imagine for a moment</strong> that we want to run a brokerage business. Apart from the main service &ndash; to
 execute client orders &ndash; we also want to provide volatility data, so that our clients can manage
 risk of their positions and survive in the whirl of the financial markets. In addition, we might
-consider to manage risk of our own positions if we decide to take some risk too.</p>
+consider to manage market risk of our own positions if we decide to take some risk too.</p>
 <p><strong>Market data</strong> is provided by the exchange. This includes option prices, volume, open interest,
 etc. Perfectly, we&rsquo;d like to get this data in real-time, however for the calibration exercise we are
-fine with historical data that is available on the internet for some small fee.</p>
-<p><strong>Tesla (TSLA)</strong> is good candidates to test our approach. Liquid. No dividends. As an example, let&rsquo;s
-look at 5-min snapshots of Tesla options on 2023-05-01. In total, there are 566'720 options to price
-on that day, which gives 7'268 options every 5 min.</p>
-<p><strong>Interest rate</strong> is another input to the Black-Scholes model. The source of this data is largely
-depends on how you hedge the interest-rate risk. As we are not interested in this for the moment,
-let&rsquo;s take freely available
-<a href="https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve">Daily Treasury Par Yield Curve Rates</a>
+fine with historical data.</p>
+<p><strong>Tesla</strong> is good candidates to test our approach. It is liquid and pays no dividends, which
+simplifies the calibration process. As a dataset, let&rsquo;s take Tesla options on 2023-05-01 with a
+5-min interval. There are 3'634 options in every snapshot or, 283'360 options in total.</p>
+<p><strong>Interest rate</strong> is another input to the Black-Scholes model. Its origin largely depends on how we
+going to hedge the interest-rate risk. As this is not our main focus for the moment, let&rsquo;s take
+freely available <a href="https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve">Daily Treasury Par Yield Curve
+Rates</a>
 from the U.S. Treasury.</p>
-<p>You will find market data in
+<p><strong>The dataset</strong> with all mentioned market data is located in
 <a href="https://github.com/gituliar/tastyhedge/tree/main/mds">gituliar/tastyhedge/mds</a>.</p>
 <p><strong>Risk analytics</strong> is the last piece we need to run our brokerage firm. This sort of programs is
 proprietary and expensive, however we can build it ourselves. After all, that&rsquo;s what this post is
@@ -147,7 +138,7 @@ European volatility and adjust it repeatedly until it replicates the American pr
 details see Step 3.</p>
 <p><strong>European calibration</strong> has no closed-form solution. Fortunately, there is a very efficient
 numerical algorithm: <a href="http://www.jaeckel.org/">Let&rsquo;s Be Rational</a> by Peter Jaeckel. Its reference
-implementation is available in C++ and other languages. Here is the C++ code:</p>
+implementation is available in C++ and other languages. We will use it like this:</p>
 <!-- raw HTML omitted -->
 <!-- raw HTML omitted -->
 <div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1</span><span><span style="color:#09f;font-style:italic">/// File: src/Analytics/Model_BlackScholes.cpp
@@ -171,8 +162,8 @@ implementation is available in C++ and other languages. Here is the C++ code:</p
 </span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19</span><span>  <span style="color:#069;font-weight:bold">return</span> <span style="color:#c30">&#34;&#34;</span>;
 </span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20</span><span>}
 </span></span></code></pre></div><h3 id="performance">Performance</h3>
-<p><strong>2'800'000 opt/s</strong> is as many European options I&rsquo;m able to calibrate on my machine with AMD Ryzen 9
-CPU. You may wonder whether this is a lot or not ?</p>
+<p><strong>2'800'000 opt/s</strong> is how many European options I&rsquo;m able to calibrate on my machine with AMD Ryzen
+9 CPU. You may wonder whether this is a lot or not ?</p>
 <p><strong>The options market</strong> has about 1'500'000 options listed on 5'000 stocks. Hence, we can calibrate
 the entire market in just 1/2 of a second on a single CPU core. Of course, this is not a nanosecond
 scale, required for high-frequency trading, however it&rsquo;s more than enough for most hedging and
@@ -253,11 +244,10 @@ prior to calling the pricing algorithm:</p>
 </span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">61</span><span>  <span style="color:#069;font-weight:bold">return</span> <span style="color:#c30">&#34;&#34;</span>;
 </span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">62</span><span>}
 </span></span></code></pre></div><h3 id="performance-1">Performance</h3>
-<p><strong>45'000 opt/s</strong> is as many American options I can price on the same machine. It&rsquo;s not as impressive
-as 2'800'000 opt/s for European calibration. But it&rsquo;s about 100x faster than pricing with the
-finite-difference method. See my post on
-<a href="blog/pricing-derivatives-on-a-budget/">pricing American options on CPU and GPU</a> for detailed
-benchmarks.</p>
+<p><strong>45'000 opt/s</strong> is how many American options I can price on the same machine. It&rsquo;s not as
+impressive as 2'800'000 opt/s for European calibration. But it&rsquo;s about 100x faster than pricing with
+the finite-difference method. See my post on <a href="blog/pricing-derivatives-on-a-budget/">pricing American options on CPU and
+GPU</a> for detailed benchmarks.</p>
 <p><strong>Advanced statistic</strong> with per-call distribution time of <code>priceAmerican</code>, collected with
 <a href="https://github.com/wolfpld/tracy">Tracy</a> profiler, looks as following:</p>
 <p><img src="priceAmerican.png" alt="Step 2: Statistics"></p>
@@ -315,16 +305,15 @@ the model and market prices of the option, while unknown variable is implied vol
 </span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">44</span><span>  <span style="color:#069;font-weight:bold">return</span> err;
 </span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">45</span><span>}
 </span></span></code></pre></div><h3 id="performance-2">Performance</h3>
-<p><strong>16'500 opt/s</strong> is as many American options I can calibrate on my machine. Effectively, we make 3
-pricing calls per calibration. Eventually, it&rsquo;s 170x slower than European calibration with
-<a href="http://www.jaeckel.org/">Let&rsquo;s Be Rational</a> by Jaeckel, but much faster if using the
-finite-difference.</p>
+<p><strong>16'500 opt/s</strong> is how many American options I can calibrate on my machine. Effectively, we make 3
+pricing calls per calibration. It&rsquo;s 170x slower than European calibration with <a href="http://www.jaeckel.org/">Let&rsquo;s Be
+Rational</a> by Jaeckel, but much faster comparing to the finite-difference.</p>
 <p><strong>Advanced statistic</strong> with per-call distribution time of <code>calibrateAmerican</code>, collected with
 <a href="https://github.com/wolfpld/tracy">Tracy</a> profiler is shown below.</p>
 <p><strong>The distribution</strong> indicates that:</p>
 <ul>
 <li>Deep in- and out-the-money options are cheap to calibrate, as the volatility is the same for
-European and American cases, hence the initial guess is already an answer, the biggest spike
+European and American cases, hence the initial guess is already an answer, see the biggest spike
 around 10 us region (to the left of the median time).</li>
 <li>At-the-money options, on the other hand, require several adjustment steps, hence more
 <code>priceAmerican</code> calls. See spikes around 100 us region:</li>
@@ -332,15 +321,16 @@ around 10 us region (to the left of the median time).</li>
 <p><img src="calibrateAmerican.png" alt="Step 3: Statistics"></p>
 <h2 id="conclusion">Conclusion</h2>
 <p>In order to build advanced hedging and trading strategies, portfolio managers need to quantify
-underlying risks of their portfolios. This is what pricing models are used for.</p>
-<p>In this post, we saw how to calibrate the Black-Scholes model to real
-<a href="https://github.com/gituliar/tastyhedge/blob/main/mds">American option prices</a> and
-<a href="https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView">yield curve rates</a>
-using C++ and modern quantitative methods. We discussed performance of our implementation by
-calibrating quotes of the Tesla options.</p>
-<p>Our approach allows to calibrate <strong>16'500 opt/s</strong> on a single AMD Ryzen 9 core. At this speed we can
-calibrate bid and ask prices for the entire market of <strong>1'500'000 options</strong> listed on <strong>5'000
-stocks</strong> in just <strong>90 s</strong>.</p>
+market risk of their portfolios. This is what pricing models are used for.</p>
+<p>In this post, we saw how to calibrate the Black-Scholes model to Tesla <a href="https://github.com/gituliar/tastyhedge/blob/main/mds">American option
+prices</a> and <a href="https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView">yield curve
+rates</a> using
+C++ and modern quantitative methods and demonstrated how it performs on the modern AMD Ryzen 9 CPU.</p>
+<p>Our approach allows to calibrate <strong>16'500 opt/s</strong> on a single CPU core. At this speed we can
+calibrate mid prices for the entire market of <strong>1'500'000 options</strong> listed on <strong>5'000 stocks</strong> in
+just <strong>45 s</strong>.</p>
+<p>Advanced statistic for various functions, collected with <a href="https://github.com/wolfpld/tracy">Tracy</a>
+profiler, looks like this:</p>
 <p><img src="stats.png" alt="Summary"></p>
 
   </div>

@@ -8,14 +8,14 @@
     <language>en-us</language>
     <managingEditor>oleksandr@gituliar.net (Oleksandr Gituliar)</managingEditor>
     <webMaster>oleksandr@gituliar.net (Oleksandr Gituliar)</webMaster>
-    <lastBuildDate>Thu, 08 Feb 2024 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 26 Feb 2024 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://tastyhedge.com/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>How-To Calibrate American Options Really Fast</title>
       <link>https://tastyhedge.com/blog/how-to-calibrate-american-options-really-fast/</link>
-      <pubDate>Thu, 08 Feb 2024 00:00:00 +0000</pubDate><author>oleksandr@gituliar.net (Oleksandr Gituliar)</author>
+      <pubDate>Mon, 26 Feb 2024 00:00:00 +0000</pubDate><author>oleksandr@gituliar.net (Oleksandr Gituliar)</author>
       <guid>https://tastyhedge.com/blog/how-to-calibrate-american-options-really-fast/</guid>
-      <description>In this post, you will learn how to calibrate American options in C++. We will use modern methods and open-source tools, so the calibration process will be really fast and accessible to everyone.&#xA;Source code is located in gituliar/tastyhedge on GitHub. You can build and run it yourself on Linux / Windows or use it as an inspiration for your own projects. Market data&#xA;Calibration is a process of fitting model parameters to the market data.</description>
+      <description>In this post, you will learn how to calibrate American options in C++ with modern methods and open-source tools, so that calibration will be really fast with source code open to review.&#xA;Source code itself is located in gituliar/tastyhedge repo on GitHub, which you can build and run it on Linux or Windows. This repo also contains all necessary market data to reproduce discussed examples.&#xA;Calibration is a process of fitting parameters of the model to the market data.</description>
     </item>
     <item>
       <title>Pricing Americans with Finite-Difference</title>
