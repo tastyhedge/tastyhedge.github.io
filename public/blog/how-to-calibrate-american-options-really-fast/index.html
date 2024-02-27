@@ -27,7 +27,7 @@
 Source code itself is located in gituliar/tastyhedge repo on GitHub, which you can build and run it on Linux or Windows. This repo also contains all necessary market data to reproduce discussed examples.
 Calibration is a process of fitting parameters of the model to the market data." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://tastyhedge.com/blog/how-to-calibrate-american-options-really-fast/" /><meta property="og:image" content="https://tastyhedge.com/blog/how-to-calibrate-american-options-really-fast/cover.png" /><meta property="article:section" content="blog" />
+<meta property="og:url" content="https://tastyhedge.com/blog/how-to-calibrate-american-options-really-fast/" /><meta property="og:image" content="https://tastyhedge.com/blog/how-to-calibrate-american-options-really-fast/cover.webp" /><meta property="article:section" content="blog" />
 <meta property="article:published_time" content="2024-02-26T00:00:00+00:00" />
 <meta property="article:modified_time" content="2024-02-26T00:00:00+00:00" />
 
@@ -54,7 +54,7 @@ Calibration is a process of fitting parameters of the model to the market data."
 <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
   <header>
     
-    <img class="pb-4" alt="Title image" src="cover.png" />
+    <img class="pb-4" alt="Title image" src="cover.webp" />
     
 
     <p class="mb-0 flex justify-between">
@@ -124,8 +124,8 @@ simplifies the calibration process. As a dataset, let&rsquo;s take Tesla options
 5-min interval. There are 3'634 options in every snapshot or, 283'360 options in total.</p>
 <p><strong>Interest rate</strong> is another input to the Black-Scholes model. Its origin largely depends on how we
 going to hedge the interest-rate risk. As this is not our main focus for the moment, let&rsquo;s take
-freely available <a href="https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve">Daily Treasury Par Yield Curve
-Rates</a>
+freely available
+<a href="https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve">Daily Treasury Par Yield Curve Rates</a>
 from the U.S. Treasury.</p>
 <p><strong>The dataset</strong> with all mentioned market data is located in
 <a href="https://github.com/gituliar/tastyhedge/tree/main/mds">gituliar/tastyhedge/mds</a>.</p>
@@ -170,7 +170,7 @@ scale, required for high-frequency trading, however it&rsquo;s more than enough 
 trading strategies.</p>
 <p><strong>Advanced statistic</strong> with per-call distribution time of <code>calibrateEuropean</code>, collected with
 <a href="https://github.com/wolfpld/tracy">Tracy</a> profiler, looks as following:</p>
-<p><img src="calibrateEuropean.png" alt="Step 1: Statistics"></p>
+<p><img src="calibrateEuropean.webp" alt="Step 1: Statistics"></p>
 <h2 id="step-2-american-pricing">Step 2: American Pricing</h2>
 <p><strong>The second step</strong> is to adjust our initial estimate to a desired tolerated error. You&rsquo;ll see how
 to do this in the next step. For now we need to learn how to efficiently price American options.</p>
@@ -246,11 +246,12 @@ prior to calling the pricing algorithm:</p>
 </span></span></code></pre></div><h3 id="performance-1">Performance</h3>
 <p><strong>45'000 opt/s</strong> is how many American options I can price on the same machine. It&rsquo;s not as
 impressive as 2'800'000 opt/s for European calibration. But it&rsquo;s about 100x faster than pricing with
-the finite-difference method. See my post on <a href="blog/pricing-derivatives-on-a-budget/">pricing American options on CPU and
-GPU</a> for detailed benchmarks.</p>
+the finite-difference method. See my post on
+<a href="blog/pricing-derivatives-on-a-budget/">pricing American options on CPU and GPU</a> for detailed
+benchmarks.</p>
 <p><strong>Advanced statistic</strong> with per-call distribution time of <code>priceAmerican</code>, collected with
 <a href="https://github.com/wolfpld/tracy">Tracy</a> profiler, looks as following:</p>
-<p><img src="priceAmerican.png" alt="Step 2: Statistics"></p>
+<p><img src="priceAmerican.webp" alt="Step 2: Statistics"></p>
 <h2 id="step-3-american-calibration">Step 3: American Calibration</h2>
 <p><strong>The third step</strong>, and the final one, is to adjust our initial estimate repeatedly until it
 replicates the American price to the desired tolerance. As option prices are quoted with $0.01 step,
@@ -306,8 +307,9 @@ the model and market prices of the option, while unknown variable is implied vol
 </span></span><span style="display:flex;"><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">45</span><span>}
 </span></span></code></pre></div><h3 id="performance-2">Performance</h3>
 <p><strong>16'500 opt/s</strong> is how many American options I can calibrate on my machine. Effectively, we make 3
-pricing calls per calibration. It&rsquo;s 170x slower than European calibration with <a href="http://www.jaeckel.org/">Let&rsquo;s Be
-Rational</a> by Jaeckel, but much faster comparing to the finite-difference.</p>
+pricing calls per calibration. It&rsquo;s 170x slower than European calibration with
+<a href="http://www.jaeckel.org/">Let&rsquo;s Be Rational</a> by Jaeckel, but much faster comparing to the
+finite-difference.</p>
 <p><strong>Advanced statistic</strong> with per-call distribution time of <code>calibrateAmerican</code>, collected with
 <a href="https://github.com/wolfpld/tracy">Tracy</a> profiler is shown below.</p>
 <p><strong>The distribution</strong> indicates that:</p>
@@ -318,20 +320,21 @@ around 10 us region (to the left of the median time).</li>
 <li>At-the-money options, on the other hand, require several adjustment steps, hence more
 <code>priceAmerican</code> calls. See spikes around 100 us region:</li>
 </ul>
-<p><img src="calibrateAmerican.png" alt="Step 3: Statistics"></p>
+<p><img src="calibrateAmerican.webp" alt="Step 3: Statistics"></p>
 <h2 id="conclusion">Conclusion</h2>
 <p>In order to build advanced hedging and trading strategies, portfolio managers need to quantify
 market risk of their portfolios. This is what pricing models are used for.</p>
-<p>In this post, we saw how to calibrate the Black-Scholes model to Tesla <a href="https://github.com/gituliar/tastyhedge/blob/main/mds">American option
-prices</a> and <a href="https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView">yield curve
-rates</a> using
-C++ and modern quantitative methods and demonstrated how it performs on the modern AMD Ryzen 9 CPU.</p>
+<p>In this post, we saw how to calibrate the Black-Scholes model to Tesla
+<a href="https://github.com/gituliar/tastyhedge/blob/main/mds">American option prices</a> and
+<a href="https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView">yield curve rates</a>
+using C++ and modern quantitative methods and demonstrated how it performs on the modern AMD Ryzen 9
+CPU.</p>
 <p>Our approach allows to calibrate <strong>16'500 opt/s</strong> on a single CPU core. At this speed we can
 calibrate mid prices for the entire market of <strong>1'500'000 options</strong> listed on <strong>5'000 stocks</strong> in
 just <strong>45 s</strong>.</p>
 <p>Advanced statistic for various functions, collected with <a href="https://github.com/wolfpld/tracy">Tracy</a>
 profiler, looks like this:</p>
-<p><img src="stats.png" alt="Summary"></p>
+<p><img src="stats.webp" alt="Summary"></p>
 
   </div>
 
