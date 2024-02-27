@@ -39,7 +39,7 @@
       <description>For a professional C++ developer, it&amp;rsquo;s important to understand memory organization of the data structures, especially when it comes to the containers from the C++ Standard Library. In this post of Tasty C++ series we&amp;rsquo;ll look inside of std::string, so that you can more effectively work with C++ strings and take advantage and avoid pitfalls of the C++ Standard Library you are using.&#xA;In C++ Standard Library, std::string is one of the three contiguous containers (together with std::array and std::vector).</description>
     </item>
     <item>
-      <title></title>
+      <title>About</title>
       <link>https://tastyhedge.com/about/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><author>oleksandr@gituliar.net (Oleksandr Gituliar)</author>
       <guid>https://tastyhedge.com/about/</guid>
