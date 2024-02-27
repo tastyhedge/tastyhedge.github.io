@@ -4,6 +4,9 @@ title = 'TastyHedge'
 
 disableKinds = ["taxonomy", "taxonomyTerm"]
 
+[params]
+  description = 'Blog about programming and quantitative finance'
+
 [params.author]
   name = "Oleksandr Gituliar"
   email = "oleksandr@gituliar.net"
