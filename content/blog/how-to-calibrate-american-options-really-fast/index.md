@@ -2,7 +2,7 @@
 layout: post
 publishDate: 2024-02-26
 title: "How-To Calibrate American Options Really Fast"
-cover: cover.png
+cover: cover.webp
 draft: false
 ---
 
@@ -62,8 +62,8 @@ simplifies the calibration process. As a dataset, let's take Tesla options on 20
 
 **Interest rate** is another input to the Black-Scholes model. Its origin largely depends on how we
 going to hedge the interest-rate risk. As this is not our main focus for the moment, let's take
-freely available [Daily Treasury Par Yield Curve
-Rates](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve)
+freely available
+[Daily Treasury Par Yield Curve Rates](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve)
 from the U.S. Treasury.
 
 **The dataset** with all mentioned market data is located in
@@ -122,7 +122,7 @@ trading strategies.
 **Advanced statistic** with per-call distribution time of `calibrateEuropean`, collected with
 [Tracy](https://github.com/wolfpld/tracy) profiler, looks as following:
 
-![Step 1: Statistics](calibrateEuropean.png)
+![Step 1: Statistics](calibrateEuropean.webp)
 
 ## Step 2: American Pricing
 
@@ -208,13 +208,14 @@ priceAmerican(f64 s, f64 k, f64 dte, f64 z, f64 r, f64 q, Parity w, f64& v)
 
 **45'000 opt/s** is how many American options I can price on the same machine. It's not as
 impressive as 2'800'000 opt/s for European calibration. But it's about 100x faster than pricing with
-the finite-difference method. See my post on [pricing American options on CPU and
-GPU](blog/pricing-derivatives-on-a-budget/) for detailed benchmarks.
+the finite-difference method. See my post on
+[pricing American options on CPU and GPU](blog/pricing-derivatives-on-a-budget/) for detailed
+benchmarks.
 
 **Advanced statistic** with per-call distribution time of `priceAmerican`, collected with
 [Tracy](https://github.com/wolfpld/tracy) profiler, looks as following:
 
-![Step 2: Statistics](priceAmerican.png)
+![Step 2: Statistics](priceAmerican.webp)
 
 ## Step 3: American Calibration
 
@@ -280,8 +281,9 @@ calibrateAmerican(f64 v, f64 s, f64 k, f64 dte, f64 r, f64 q, Parity w, f64& z)
 ### Performance
 
 **16'500 opt/s** is how many American options I can calibrate on my machine. Effectively, we make 3
-pricing calls per calibration. It's 170x slower than European calibration with [Let's Be
-Rational](http://www.jaeckel.org/) by Jaeckel, but much faster comparing to the finite-difference.
+pricing calls per calibration. It's 170x slower than European calibration with
+[Let's Be Rational](http://www.jaeckel.org/) by Jaeckel, but much faster comparing to the
+finite-difference.
 
 **Advanced statistic** with per-call distribution time of `calibrateAmerican`, collected with
 [Tracy](https://github.com/wolfpld/tracy) profiler is shown below.
@@ -294,17 +296,18 @@ Rational](http://www.jaeckel.org/) by Jaeckel, but much faster comparing to the 
 - At-the-money options, on the other hand, require several adjustment steps, hence more
   `priceAmerican` calls. See spikes around 100 us region:
 
-![Step 3: Statistics](calibrateAmerican.png)
+![Step 3: Statistics](calibrateAmerican.webp)
 
 ## Conclusion
 
 In order to build advanced hedging and trading strategies, portfolio managers need to quantify
 market risk of their portfolios. This is what pricing models are used for.
 
-In this post, we saw how to calibrate the Black-Scholes model to Tesla [American option
-prices](https://github.com/gituliar/tastyhedge/blob/main/mds) and [yield curve
-rates](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView) using
-C++ and modern quantitative methods and demonstrated how it performs on the modern AMD Ryzen 9 CPU.
+In this post, we saw how to calibrate the Black-Scholes model to Tesla
+[American option prices](https://github.com/gituliar/tastyhedge/blob/main/mds) and
+[yield curve rates](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView)
+using C++ and modern quantitative methods and demonstrated how it performs on the modern AMD Ryzen 9
+CPU.
 
 Our approach allows to calibrate **16'500 opt/s** on a single CPU core. At this speed we can
 calibrate mid prices for the entire market of **1'500'000 options** listed on **5'000 stocks** in
@@ -313,4 +316,4 @@ just **45 s**.
 Advanced statistic for various functions, collected with [Tracy](https://github.com/wolfpld/tracy)
 profiler, looks like this:
 
-![Summary](stats.png)
+![Summary](stats.webp)
