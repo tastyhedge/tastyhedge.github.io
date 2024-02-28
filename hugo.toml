@@ -11,6 +11,10 @@ disableKinds = ["taxonomy", "taxonomyTerm"]
   name = "Oleksandr Gituliar"
   email = "oleksandr@gituliar.net"
 
+[outputFormats.RSS]
+  mediatype = "application/rss"
+  baseName = "feed"
+
 [markup]
   [markup.highlight]
     anchorLineNos = false
