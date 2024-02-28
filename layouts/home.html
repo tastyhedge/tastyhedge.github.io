@@ -1,11 +1,14 @@
 {{ define "content" }}
 
 <ul class="list-inside list-none">
-  {{ range $page := where .Site.AllPages "Section" "blog" }}
+  {{ range (where .Site.AllPages "Section" "blog").GroupByDate "2006" }}
+  <h2>{{ .Key }}</h2>
+  {{ range .Pages }}
   <li class="m-0 py-2">
     <a class="text-xl" href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
-    <time class="block text-sm post-subtitle">{{ time.Format "2006-01-02" $page.Date }}</time>
+    <time class="block text-sm post-subtitle">{{ time.Format "2006-01-02" .Date }}</time>
   </li>
+  {{ end }}
   {{ end }}
 </ul>
 
