@@ -9,7 +9,9 @@ draft: true
 - Who is your target audience ?
 - What sort of story does your target audience like to read ?
 
-Do you know how to calibrate **American options** 🚀 really fast❓
+## Designer Prompts
 
-✍ In my new post, you’ll see how to calibrate **Tesla options** to **real market** 📈 in **C++** ⌨
-with **open-source** tools.
+- A mechanical keyboard next to the cup of coffee in comics style
+
+- A computer keyboard and coffee cup on the desk in a comics style, tilted frame, sunset at golden
+  hour
