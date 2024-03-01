@@ -11,7 +11,7 @@ build:
 	rm public/ -rf && ./bin/hugo.exe
 deploy: build sync
 sync:
-	aws s3 sync --size-only --delete ./public/ s3://tastyhedge.com/
+	aws s3 sync --delete ./public/ s3://tastyhedge.com/
 
 css:
 	./bin/tailwindcss.exe -i main.css -o static/css/main.css --watch --content "layouts/**/*.html"
