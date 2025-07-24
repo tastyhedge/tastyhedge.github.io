@@ -1,33 +1,33 @@
 <!DOCTYPE html>
 <html lang="en-US">
+  <head>
+    <title>
+      Pricing Derivatives on a Budget | TastyHedge
+    </title>
 
-<head>
-  <title>Pricing Derivatives on a Budget | TastyHedge</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="Oleksandr Gituliar" />
+    <meta
+      name="description"
+      content="After five years working as a quant, I can tell that the wast majority of derivative pricing in the financial industry is done on CPU. This is easily explained by two facts: (1) no GPU was available when banks started developing their pricing analytics in 90&rsquo;s; and (2) banking is a conservative sector, slow to upgrade its technical stack.
+American Options. In this post, I benchmark pricing of American Options on GPU."
+    />
 
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="author" content="Oleksandr Gituliar">
-  <meta name="description"
-    content="After five years working as a quant, I can tell that the wast majority of derivative pricing in the financial industry is done on CPU. This is easily explained by two facts: (1) no GPU was available when banks started developing their pricing analytics in 90&rsquo;s; and (2) banking is a conservative sector, slow to upgrade its technical stack.
-American Options. In this post, I benchmark pricing of American Options on GPU." />
+    
+    
+    <script
+      defer
+      src="https://cloud.umami.is/script.js"
+      data-website-id="9792bbd0-064d-4967-a9bb-cb69ecaf5a98"
+    ></script>
+    
 
-  
-  
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HZRVS8S0KQ"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
+    <link rel="stylesheet" href="/css/main.css" />
+    <link rel="stylesheet" href="/css/code.css" />
+    <link rel="icon" href="/favicon.ico" />
 
-    gtag('config', 'G-HZRVS8S0KQ');
-  </script>
-  
-
-  <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/code.css">
-  <link rel="icon" href="/favicon.ico">
-
-  <meta property="og:title" content="Pricing Derivatives on a Budget" />
+    <meta property="og:title" content="Pricing Derivatives on a Budget" />
 <meta property="og:description" content="After five years working as a quant, I can tell that the wast majority of derivative pricing in the financial industry is done on CPU. This is easily explained by two facts: (1) no GPU was available when banks started developing their pricing analytics in 90&rsquo;s; and (2) banking is a conservative sector, slow to upgrade its technical stack.
 American Options. In this post, I benchmark pricing of American Options on GPU." />
 <meta property="og:type" content="article" />
@@ -37,23 +37,30 @@ American Options. In this post, I benchmark pricing of American Options on GPU."
 
 
 
-  
-</head>
-
-<body class="mx-auto bg-stone-200">
-  <div class="bg-white pb-1 min-h-screen px-4 md:px-12 border-x-[1px] border-black">
-    <nav class="flex justify-between pb-6">
-      <a class="block font-bold my-auto text-2xl tracking-tighter text-inherit no-underline"
-        style="text-underline-offset: 6px;" href="/">
-        <img src="/img/logo/logo-32x32.png" class="inline-flex py-4 me-2 w-8"><span
-          class="align-middle">TastyHedge</span>
-      </a>
-      <div class=" my-auto text-xl">
-        <a class="text-black" href="/about">About</a>
-      </div>
-    </nav>
-
     
+  </head>
+
+  <body class="mx-auto bg-stone-200">
+    <div
+      class="bg-white pb-1 min-h-screen px-4 md:px-12 border-x-[1px] border-black"
+    >
+      <nav class="flex justify-between pb-6">
+        <a
+          class="block font-bold my-auto text-2xl tracking-tighter text-inherit no-underline"
+          style="text-underline-offset: 6px"
+          href="/"
+        >
+          <img
+            src="/img/logo/logo-32x32.png"
+            class="inline-flex py-4 me-2 w-8"
+          /><span class="align-middle">TastyHedge</span>
+        </a>
+        <div class="my-auto text-xl">
+          <a class="text-black" href="/about">About</a>
+        </div>
+      </nav>
+
+      
 
 <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
   <header>
@@ -249,13 +256,12 @@ financial industry. However, what is the benefit of running it on GPU ?</p>
 </article>
 
 
-  </div>
+    </div>
 
-  <script>
-    document.querySelectorAll('a[href^="http"]').forEach(function (e) {
-      e.setAttribute('target', '_blank');
-    });
-  </script>
-</body>
-
+    <script>
+      document.querySelectorAll('a[href^="http"]').forEach(function (e) {
+        e.setAttribute("target", "_blank");
+      });
+    </script>
+  </body>
 </html>
