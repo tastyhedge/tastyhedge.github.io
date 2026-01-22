@@ -9,7 +9,7 @@ disableKinds = ["taxonomy", "taxonomyTerm"]
 
 [params.author]
   name = "Oleksandr Gituliar"
-  email = "oleksandr@gituliar.net"
+  email = "oleksandr@gituliar.com"
 
 [outputFormats.RSS]
   mediatype = "application/rss"
